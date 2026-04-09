@@ -4,19 +4,18 @@ from collections.abc import AsyncGenerator
 import strawberry
 from async_lru import alru_cache
 from strawberry.scalars import JSON
-from strawberry.types import Info
 
-from ..db import async_latest_rows, async_variables
+from ..db import async_latest_rows
 from ..utils import create_map, wrap_values
-from .models import Timestamp, get_model
+from .metadata import fetch_metadata
+from .models import DamnitRun, Timestamp
 from .utils import DatabaseInput, LatestData, fetch_info
 
 POLLING_INTERVAL = 1  # seconds
 
 
 @alru_cache(ttl=POLLING_INTERVAL)
-async def get_latest_data(proposal, timestamp, schema):
-    # Get latest data
+async def get_latest_data(proposal, timestamp):
     latest_data = await async_latest_rows(
         proposal,
         table="run_variables",
@@ -28,22 +27,13 @@ async def get_latest_data(proposal, timestamp, schema):
 
     latest_data = LatestData.from_list(latest_data)
 
-    # Get latest runs
     latest_runs = await fetch_info(proposal, runs=list(latest_data.runs.keys()))
     latest_runs = create_map(latest_runs, key="run")
 
-    # Update model
-    model = get_model(proposal)
-    latest_variables = await async_variables(proposal)
-    model_changed = model.update(
-        latest_variables,
-        timestamp=latest_data.timestamp,
-    )
-    if model_changed:
-        # Update GraphQL schema
-        schema.update(model.stype)
+    # New rows arrived. Clear the metadata cache so the next read is fresh.
+    fetch_metadata.cache_invalidate(proposal)
+    metadata = await fetch_metadata(proposal)
 
-    # Aggregate run values from latest data and runs
     runs = {}
     for run, variables in latest_data.runs.items():
         run_values = {
@@ -55,22 +45,22 @@ async def get_latest_data(proposal, timestamp, schema):
         if run_info := latest_runs.get(run):
             run_values.update(wrap_values(run_info))
 
-        runs[run] = model.resolve(**run_values)
+        runs[run] = DamnitRun.resolve(run_values)
 
-    # Return the latest values if any
-    if len(runs):
-        # Update the model with new runs
-        model.runs = sorted(set(model.runs + list(runs.keys())))
+    if not len(runs):
+        return None
 
-        metadata = {
-            "runs": model.runs,
-            "variables": model.variables,
-            "timestamp": model.timestamp * 1000,  # deserialize to JS
-        }
+    assert latest_data.timestamp is not None  # noqa: S101 (we expect a timestamp!)
 
-        return {"runs": runs, "metadata": metadata}
+    # Use the union of the runs just in case `run_info` table is not synced
+    # with the `run_variables` table.
+    metadata = {
+        "runs": sorted(set(metadata["runs"]) | set(runs.keys())),
+        "variables": metadata["variables"],
+        "timestamp": latest_data.timestamp * 1000,  # ms for JS
+    }
 
-    return None
+    return {"runs": runs, "metadata": metadata}
 
 
 @strawberry.type
@@ -78,9 +68,8 @@ class Subscription:
     @strawberry.subscription
     async def latest_data(
         self,
-        info: Info,
         database: DatabaseInput,
-        timestamp: Timestamp,  # FIX: # pyright: ignore[reportInvalidTypeForm]
+        timestamp: Timestamp,
     ) -> AsyncGenerator[JSON]:  # FIX: # pyright: ignore[reportInvalidTypeForm]
         while True:
             # Sleep first :)
@@ -89,7 +78,6 @@ class Subscription:
             result = await get_latest_data(
                 proposal=database.proposal,
                 timestamp=timestamp,
-                schema=info.schema,
             )
             if result is not None:
                 yield result  # FIX: # pyright: ignore[reportReturnType]

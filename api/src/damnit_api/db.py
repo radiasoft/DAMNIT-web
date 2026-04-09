@@ -176,7 +176,7 @@ async def async_variable_tags(proposal):
 
         return variable_tags
     except NoSuchTableError:
-        return []
+        return {}
 
 
 # -----------------------------------------------------------------------------
