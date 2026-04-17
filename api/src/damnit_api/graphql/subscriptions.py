@@ -5,7 +5,7 @@ import strawberry
 from async_lru import alru_cache
 from strawberry.scalars import JSON
 
-from ..db import async_latest_rows
+from ..db import async_latest_rows, async_table
 from ..utils import create_map, wrap_values
 from .metadata import fetch_metadata
 from .models import DamnitRun, Timestamp
@@ -16,9 +16,13 @@ POLLING_INTERVAL = 1  # seconds
 
 @alru_cache(ttl=POLLING_INTERVAL)
 async def get_latest_data(proposal, timestamp):
+    table = await async_table(proposal, name="run_variables")
+    if table is None:
+        return None
+
     latest_data = await async_latest_rows(
         proposal,
-        table="run_variables",
+        table=table,
         by="timestamp",
         start_at=timestamp,
     )

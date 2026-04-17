@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 
+from async_lru import alru_cache
 from sqlalchemy import (
     MetaData,
     Table,
@@ -89,15 +90,23 @@ def get_connection(proposal) -> AsyncConnection:
     ).connect()  # FIX: # pyright: ignore[reportReturnType]
 
 
-async def async_table(proposal, name: str = "runs") -> Table:
+@alru_cache(ttl=300)
+async def async_table(proposal, name: str = "runs") -> Table | None:
     async with get_connection(proposal) as conn:
-        return await conn.run_sync(
-            lambda conn: Table(name, MetaData(), autoload_with=conn)
-        )
+        try:
+            return await conn.run_sync(
+                lambda conn: Table(name, MetaData(), autoload_with=conn)
+            )
+        except NoSuchTableError:
+            # Don't cache misses; the table may appear shortly.
+            async_table.cache_invalidate(proposal, name)
+            return None
 
 
 async def async_variables(proposal):
     variables = await async_table(proposal, name="variables")
+    if variables is None:
+        return {}
     selection_variables = select(variables.c.name, variables.c.title)
     async with get_session(proposal) as session:
         result = await session.execute(selection_variables)
@@ -110,7 +119,7 @@ async def async_variables(proposal):
 async def async_latest_rows(
     proposal,
     *,
-    table: str | Table,
+    table: Table,
     by: str,
     start_at=None,
     descending=True,
@@ -118,9 +127,6 @@ async def async_latest_rows(
     if start_at is None:
         start_at = datetime.now().astimezone().timestamp()
     order_by = desc(by) if descending else by
-
-    if isinstance(table, str):
-        table = await async_table(proposal, name=table)
 
     selection = (
         select(table)
@@ -139,6 +145,8 @@ async def async_column(proposal, *, table: str, name: str):
     table = await async_table(
         proposal, name=table
     )  # FIX:  # pyright: ignore[reportAssignmentType]
+    if table is None:
+        return []
     selection = select(
         table.c.get(name)  # FIX:  # pyright: ignore[reportAttributeAccessIssue]
     )
@@ -151,6 +159,8 @@ async def async_column(proposal, *, table: str, name: str):
 
 async def async_all_tags(proposal):
     tags_table = await async_table(proposal, name="tags")
+    if tags_table is None:
+        return {}
     selection = select(
         tags_table.c.id,
         tags_table.c.name,
@@ -162,21 +172,21 @@ async def async_all_tags(proposal):
 
 
 async def async_variable_tags(proposal):
-    try:
-        variable_tags_table = await async_table(proposal, name="variable_tags")
-        selection = select(
-            variable_tags_table.c.variable_name, variable_tags_table.c.tag_id
-        )
-        async with get_session(proposal) as session:
-            result = await session.execute(selection)
-
-        variable_tags: dict[str, list[int]] = defaultdict(list)
-        for row in result.mappings().all():
-            variable_tags[row["variable_name"]].append(row["tag_id"])
-
-        return variable_tags
-    except NoSuchTableError:
+    variable_tags_table = await async_table(proposal, name="variable_tags")
+    if variable_tags_table is None:
         return {}
+
+    selection = select(
+        variable_tags_table.c.variable_name, variable_tags_table.c.tag_id
+    )
+    async with get_session(proposal) as session:
+        result = await session.execute(selection)
+
+    variable_tags: dict[str, list[int]] = defaultdict(list)
+    for row in result.mappings().all():
+        variable_tags[row["variable_name"]].append(row["tag_id"])
+
+    return variable_tags
 
 
 # -----------------------------------------------------------------------------
@@ -185,6 +195,11 @@ async def async_variable_tags(proposal):
 
 def get_damnit_path(proposal_number: str = DEFAULT_PROPOSAL) -> str:
     """Returns the directory of the given proposal."""
+    from .shared.settings import settings
+
+    if settings.is_local:
+        return str(settings.damnit_path)
+
     path = find_proposal(proposal_number)
     if not path:
         msg = f"Proposal '{proposal_number}' is not found."

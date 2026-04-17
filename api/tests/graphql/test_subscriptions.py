@@ -32,8 +32,14 @@ def current_timestamp():
 
 @pytest.fixture
 def mocked_latest_rows(mocker, current_timestamp):
+    table_sentinel = mocker.sentinel.run_variables_table
+    mocker.patch(
+        "damnit_api.graphql.subscriptions.async_table",
+        return_value=table_sentinel,
+    )
+
     def mocked_returns(*args, table, **kwargs):
-        if table == "run_variables":
+        if table is table_sentinel:
             return create_run_variables(
                 get_values(NEW_DATA),
                 proposal=PROPOSAL,
