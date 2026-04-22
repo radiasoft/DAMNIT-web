@@ -418,6 +418,7 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "python-ulid", extra = ["pydantic"] },
     { name = "requests" },
+    { name = "rich" },
     { name = "scipy" },
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "sqlmodel" },
@@ -439,14 +440,12 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-mock" },
-    { name = "rich" },
     { name = "ruff" },
     { name = "strawberry-graphql" },
 ]
 develop = [
     { name = "datamodel-code-generator", extra = ["http"] },
     { name = "pre-commit" },
-    { name = "rich" },
     { name = "strawberry-graphql" },
 ]
 docs = [
@@ -488,6 +487,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = "~=2.2" },
     { name = "python-ulid", extras = ["pydantic"], specifier = ">=3.1.0" },
     { name = "requests", specifier = "~=2.32" },
+    { name = "rich", specifier = ">=14.2.0" },
     { name = "scipy", specifier = "~=1.11" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = "~=2.0" },
     { name = "sqlmodel", specifier = ">=0.0.31" },
@@ -509,14 +509,12 @@ dev = [
     { name = "pytest", specifier = "~=7.4" },
     { name = "pytest-asyncio", specifier = "~=0.21" },
     { name = "pytest-mock", specifier = "~=3.11" },
-    { name = "rich", specifier = ">=14.2.0" },
     { name = "ruff", specifier = ">=0.7" },
     { name = "strawberry-graphql", extras = ["debug-server"], specifier = ">=0.283.3" },
 ]
 develop = [
     { name = "datamodel-code-generator", extras = ["http"], specifier = ">=0.35.0" },
     { name = "pre-commit", specifier = ">=4.5.1" },
-    { name = "rich", specifier = ">=14.2.0" },
     { name = "strawberry-graphql", extras = ["debug-server"], specifier = ">=0.283.3" },
 ]
 docs = [
