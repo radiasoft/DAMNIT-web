@@ -11,7 +11,7 @@ def test_generate_proposal():
             rd = f[".reduced"]
             assert set(f.keys()) == set(rd.keys()).union((".reduced", ".errors"))
             assert rd["simple_integer"][()] == 1
-            assert rd["numpy_2d_array"][()].tobytes()[1:4] == b"PNG"
+            assert b"128" in rd["numpy_2d_array"][()]
 
     def _assert_proposal(pdir, pnum, num_runs):
         assert pdir.joinpath("context.py").exists()
@@ -30,7 +30,11 @@ def test_generate_proposal():
         assert "simple_integer" in cols
         c.close()
 
+    import time
+
     num_runs = 3
     d = pathlib.Path(pykern.pkunit.empty_work_dir())
-    dev._generate_proposal(d, dev.SMALL_PROPOSAL, num_runs)
+    dev._Generator(d, dev.SMALL_PROPOSAL, num_runs, dev._VARIABLES).generate(
+        time.time() - num_runs * 60
+    )
     _assert_proposal(d.joinpath(str(dev.SMALL_PROPOSAL)), dev.SMALL_PROPOSAL, num_runs)
