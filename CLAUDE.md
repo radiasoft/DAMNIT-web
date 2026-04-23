@@ -52,7 +52,7 @@ scripts/                    Shell helpers
 ## Coding style
 
 New RadiaSoft-authored files follow the local XFEL style (type annotations, Pydantic models,
-FastAPI/Strawberry patterns) with these RadiaSoft-specific differences:
+FastAPI/Strawberry patterns) with these radiasoft-style improvements:
 
 - **Qualified imports**: `import pykern.pkcli` then call as `pykern.pkcli.main(...)`, not
   `from pykern import pkcli`
@@ -62,6 +62,10 @@ FastAPI/Strawberry patterns) with these RadiaSoft-specific differences:
 - **Always keep the pkdebug import** even when none are currently used
 - **Single-letter temporaries**: use `z`, `r`, `v` etc. for short-lived locals to signal
   limited scope and reduce line length; reserve longer names for parameters and module-level names
+- **code org** sort alphabetically according to radiasoft-style skill
+- **program functionally** remove unnecessary temporary variables
+- **nested functions** one level nesting of functions (no deeper) are used to separate logical operations.
+
 
 Other conventions:
 - pykern is at `../radiasoft/pykern` (relative to this repo)
