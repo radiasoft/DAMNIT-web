@@ -1,11 +1,8 @@
+from damnit_api.pkcli import dev
+import h5py
 import pathlib
 import sqlite3
 import tempfile
-
-import h5py
-import numpy as np
-
-from damnit_api.pkcli import dev
 
 
 def test_generate_proposal():
