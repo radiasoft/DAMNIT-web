@@ -87,6 +87,12 @@ def setup_perf_test(path: str) -> None:
         t = g.generate(t)
 
 
+def setup_small_test(path: str) -> None:
+    """Generate minimal dataset (SMALL_PROPOSAL only) for unit tests."""
+    g = _Generator(path, SMALL_PROPOSAL, SMALL_NUM_RUNS, _VARIABLES)
+    g.generate(time.time() - SMALL_NUM_RUNS * _RUN_DELTA)
+
+
 class _Generator:
     def __init__(self, root, proposal, num_runs, variables):
         self.num_runs = num_runs
