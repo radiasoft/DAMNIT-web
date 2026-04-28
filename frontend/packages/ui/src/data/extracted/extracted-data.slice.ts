@@ -45,14 +45,15 @@ const slice = createSlice({
   extraReducers: (builder) => {
     builder.addCase(getExtractedValue.fulfilled, (state, action) => {
       // TODO: Add pending and rejected
-      const { run, variable, data, ...metadata } = action.payload
+      const p = action.payload as { run: string; variable: string; data: ExtractedDataItem } & ExtractedMetadataItem
+      const { run, variable, data, ...metadata } = p
       state.data = {
         ...state.data,
         [run]: { ...(state.data[run] ?? {}), [variable]: data },
       }
       state.metadata = {
         ...state.metadata,
-        [run]: { ...(state.metadata[run] ?? {}), [variable]: metadata },
+        [run]: { ...(state.metadata[run] ?? {}), [variable]: metadata as ExtractedMetadataItem },
       }
     })
   },

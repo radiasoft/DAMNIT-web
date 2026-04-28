@@ -40,6 +40,9 @@ catalogs:
       specifier: 2.6.0
       version: 2.6.0
   frontend:
+    '@msgpack/msgpack':
+      specifier: 3.0.0-beta2
+      version: 3.0.0-beta2
     clsx:
       specifier: 2.1.1
       version: 2.1.1
@@ -483,6 +486,9 @@ importers:
       '@monaco-editor/react':
         specifier: catalog:components
         version: 4.7.0(monaco-editor@0.55.1)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@msgpack/msgpack':
+        specifier: catalog:frontend
+        version: 3.0.0-beta2
       '@reduxjs/toolkit':
         specifier: catalog:redux
         version: 2.6.1(react-redux@9.2.0(@types/react@18.2.45)(react@18.2.0)(redux@5.0.1))(react@18.2.0)
@@ -1133,6 +1139,11 @@ packages:
       monaco-editor: '>= 0.25.0 < 1'
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  '@msgpack/msgpack@3.0.0-beta2':
+    resolution: {integrity: sha512-y+l1PNV0XDyY8sM3YtuMLK5vE3/hkfId+Do8pLo/OPxfxuFAUwcGz3oiiUuV46/aBpwTzZ+mRWVMtlSKbradhw==}
+    engines: {node: '>= 14'}
+    deprecated: too old
 
   '@mswjs/interceptors@0.40.0':
     resolution: {integrity: sha512-EFd6cVbHsgLa6wa4RljGj6Wk75qoHxUSyc5asLyyPSyuhIcdS2Q3Phw6ImS1q+CkALthJRShiYfKANcQMuMqsQ==}
@@ -4029,6 +4040,8 @@ snapshots:
       monaco-editor: 0.55.1
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
+
+  '@msgpack/msgpack@3.0.0-beta2': {}
 
   '@mswjs/interceptors@0.40.0':
     dependencies:

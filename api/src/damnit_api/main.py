@@ -109,9 +109,11 @@ def create_app():
 if __name__ == "__main__":
     import argparse
     import os
+    import threading
 
     parser = argparse.ArgumentParser(description="DAMNIT Web API Server")
     parser.add_argument("--path", type=str, help="Path to amore/damnit directory")
+    parser.add_argument("--pykern-port", type=int, default=8001, help="Port for pykern.api WebSocket server")
     args = parser.parse_args()
 
     if args.path:
@@ -133,6 +135,21 @@ if __name__ == "__main__":
             )
 
         os.environ["DW_API_DAMNIT_PATH"] = args.path
+        os.environ["DAMNIT_API_QUEST_API_DAMNIT_PATH"] = args.path
+
+    def _start_pykern_api(port):
+        from pykern.api import server as _server
+        from pykern.pkcollections import PKDict
+        from damnit_api import quest_api
+        _server.start(
+            api_classes=[quest_api.API],
+            attr_classes=[],
+            http_config=PKDict(api_uri="/api-v1", tcp_ip="127.0.0.1", tcp_port=port),
+        )
+
+    threading.Thread(
+        target=_start_pykern_api, args=(args.pykern_port,), daemon=True
+    ).start()
 
     import uvicorn
 

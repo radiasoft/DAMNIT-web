@@ -27,6 +27,7 @@
   },
   "peerDependencies": {
     "@apollo/client": "catalog:graphql",
+    "@msgpack/msgpack": "catalog:frontend",
     "@glideapps/glide-data-grid": "catalog:components",
     "@glideapps/glide-data-grid-cells": "catalog:components",
     "@mantine/core": "catalog:components",
@@ -51,6 +52,7 @@
   },
   "devDependencies": {
     "@apollo/client": "catalog:graphql",
+    "@msgpack/msgpack": "catalog:frontend",
     "@damnit-frontend/config": "workspace:*",
     "@glideapps/glide-data-grid": "catalog:components",
     "@glideapps/glide-data-grid-cells": "catalog:components",
