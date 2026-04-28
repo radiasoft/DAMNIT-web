@@ -41,7 +41,7 @@ def server(path):
 
 
 @contextlib.contextmanager
-def pykern_server(path=None):
+def pykern_api_server(path=None):
     """Start a pykern.api Tornado server and yield its connection config."""
     from pykern.api import server as _server
     from pykern.pkcollections import PKDict

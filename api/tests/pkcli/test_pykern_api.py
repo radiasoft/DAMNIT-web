@@ -23,11 +23,11 @@ def test_pykern_api_extracted_data():
     d = pathlib.Path(pkunit.empty_work_dir())
     dev.setup_small_test(str(d))
     p = d.joinpath(str(dev.SMALL_PROPOSAL))
-    with unit_util.pykern_server(path=p) as cfg:
+    with unit_util.pykern_api_server(path=p) as cfg:
         asyncio.run(_run(cfg))
 
 
-def test_pykern_api_server():
+def test_pykern_pykern_api_server():
     import asyncio
     from pykern import pkunit
     from pykern.api import client
@@ -39,5 +39,5 @@ def test_pykern_api_server():
             r = await c.call_api("ping", PKDict())
             pkunit.pkeq(PKDict(result="pong"), r)
 
-    with unit_util.pykern_server() as cfg:
+    with unit_util.pykern_api_server() as cfg:
         asyncio.run(_run(cfg))
