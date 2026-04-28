@@ -1,7 +1,9 @@
 from pykern.pkdebug import pkdc, pkdlog, pkdp
 import contextlib
+import os
 import pykern.pkconst
 import pykern.util
+import signal
 import threading
 import time
 
@@ -36,3 +38,36 @@ def server(path):
         yield f"http://{pykern.pkconst.LOCALHOST_IP}:{p}"
     finally:
         v.should_exit = True
+
+
+@contextlib.contextmanager
+def pykern_server():
+    """Start a pykern.api Tornado server and yield its connection config."""
+    from pykern.api import server
+    from pykern.pkcollections import PKDict
+    from damnit_api import quest_api
+
+    p = pykern.util.unbound_localhost_tcp_port()
+    cfg = PKDict(
+        api_uri="/api-v1",
+        tcp_ip=pykern.pkconst.LOCALHOST_IP,
+        tcp_port=p,
+    )
+    pid = os.fork()
+    if pid == 0:
+        try:
+            server.start(
+                api_classes=[quest_api.API],
+                attr_classes=[],
+                http_config=cfg.copy(),
+            )
+        except Exception as e:
+            pkdlog("exception={} stack={}", e)
+        finally:
+            os._exit(0)
+    time.sleep(1)
+    try:
+        yield cfg
+    finally:
+        os.kill(pid, signal.SIGKILL)
+        os.waitpid(pid, 0)
