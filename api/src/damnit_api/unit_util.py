@@ -11,7 +11,9 @@ def server(path):
     """Start the API server against ``path`` and yield the base URL."""
 
     def _start():
+        import os
         import uvicorn
+        os.environ["DW_API_DAMNIT_PATH"] = str(path)
         from damnit_api import main
         from damnit_api.shared import settings
 

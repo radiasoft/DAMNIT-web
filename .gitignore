@@ -9,3 +9,4 @@ certs/
 *.pem
 run/
 *_work
+CLAUDE.md

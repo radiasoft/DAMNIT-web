@@ -130,6 +130,9 @@ class _Generator:
                 return d
             if np.ndim(d) == 1:
                 return _trendline(d.real.astype(float))
+            if np.ndim(d) == 3 and d.shape[-1] in (3, 4):
+                s = max(1, d.shape[0] // 64), max(1, d.shape[1] // 64)
+                return d[:: s[0], :: s[1]]
             return np.array(str(d.shape), dtype=object)
 
         def _trendline(arr):
@@ -179,6 +182,13 @@ class _Generator:
 
         added_at = self._start_times[-1] + _RUN_DELTA
         db = damnit.backend.db.DamnitDB(self._r.joinpath(DB_PATH))
+        db.metameta["proposal"] = str(self.proposal)
+        db.update_computed_variables(
+            {
+                n: {"title": n, "description": "", "attributes": None}
+                for n in self._variables
+            }
+        )
         d = self._r.joinpath("extracted_data")
         for n in range(1, self.num_runs + 1):
             db.ensure_run(

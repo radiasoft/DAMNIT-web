@@ -1,6 +1,6 @@
 from enum import Enum
 
-DEFAULT_PROPOSAL = "2956"
+DEFAULT_PROPOSAL = "9001"
 
 FILL_VALUE = "None"
 
