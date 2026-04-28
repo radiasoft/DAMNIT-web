@@ -4,7 +4,6 @@ import numpy as np
 import xarray as xr
 from damnit.api import Damnit, DataType
 from PIL import Image
-
 from .shared.const import DamnitType
 from .utils import b64image
 

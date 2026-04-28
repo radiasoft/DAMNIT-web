@@ -43,9 +43,8 @@ def server(path):
 @contextlib.contextmanager
 def pykern_server(path=None):
     """Start a pykern.api Tornado server and yield its connection config."""
-    from pykern.api import server
+    from pykern.api import server as _server
     from pykern.pkcollections import PKDict
-    from damnit_api import quest_api
 
     p = pykern.util.unbound_localhost_tcp_port()
     cfg = PKDict(
@@ -57,10 +56,12 @@ def pykern_server(path=None):
     if pid == 0:
         try:
             if path is not None:
-                os.environ["DW_API_DAMNIT_PATH"] = str(path)
-                from damnit_api.shared import settings as _s
-                _s.settings = _s.Settings(damnit_path=path)
-            server.start(
+                from pykern import pkconfig as _pkconfig
+                _pkconfig.reset_state_for_testing(
+                    PKDict(DAMNIT_API_QUEST_API_DAMNIT_PATH=str(path))
+                )
+            from damnit_api import quest_api
+            _server.start(
                 api_classes=[quest_api.API],
                 attr_classes=[],
                 http_config=cfg.copy(),
