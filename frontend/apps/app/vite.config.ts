@@ -49,6 +49,7 @@ export default defineConfig(({ command, mode }): UserConfig => {
     }
 
     const apiURL = new URL(VITE_API)
+    const pykernApiURL = `http://${apiURL.hostname}:8001`
 
     const sslConfig = getSslConfig()
     const httpsAgent = sslConfig ? new https.Agent(sslConfig) : undefined
@@ -80,6 +81,17 @@ export default defineConfig(({ command, mode }): UserConfig => {
         [withBaseUrl('oauth')]: { ...defaultProxyConfig },
         [withBaseUrl('metadata')]: { ...defaultProxyConfig },
         [withBaseUrl('contextfile')]: { ...defaultProxyConfig },
+        '/api-v1': {
+          target: pykernApiURL,
+          ws: true,
+          changeOrigin: true,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          configure: (proxy: any) => {
+            proxy.on('proxyReqWs', (proxyReq: { removeHeader: (h: string) => void }) => {
+              proxyReq.removeHeader('origin')
+            })
+          },
+        },
       },
       https: sslConfig,
     }

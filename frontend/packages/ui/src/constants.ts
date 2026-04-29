@@ -11,7 +11,7 @@ export const WS_URL = `${wsProtocol}://${window.location.host}${BASE_URL}`
 
 export const PYKERN_WS_URL =
   import.meta.env.VITE_PYKERN_WS ??
-  `ws://${window.location.hostname}:8001/api-v1`
+  `${wsProtocol}://${window.location.host}/api-v1`
 
 export const EMPTY_VALUE = 'None'
 export const VARIABLES = {
