@@ -133,17 +133,25 @@ def test_perf_server():
 def test_perf_pykern_api():
     import asyncio
     import time
+    import httpx
     from pykern.api import client
     from pykern.pkcollections import PKDict
     from pykern.pkdebug import pkdlog
     from damnit_api import unit_util
     from damnit_api.pkcli import dev
 
+    proposal = str(dev.LARGE_PROPOSAL)
     per_page = 10
-    run_ids = list(range(1, per_page + 1))
-    variables = list(dev._PERF_VARIABLES.keys())
 
-    async def _extracted(c):
+    async def _metadata(url):
+        async with httpx.AsyncClient(base_url=url, timeout=30.0) as c:
+            r = await c.post(
+                "/graphql",
+                json={"query": _METADATA_QUERY, "variables": {"proposal": proposal}},
+            )
+            return r.json()["data"]["metadata"]
+
+    async def _extracted(c, run_ids, variables):
         t = time.time()
         tasks = [
             c.call_api("extracted_data", PKDict(run=run, variable=v))
@@ -158,13 +166,17 @@ def test_perf_pykern_api():
         )
         return results
 
-    async def _run(cfg):
+    async def _run(cfg, run_ids, variables):
         async with client.Client(cfg) as c:
-            await _extracted(c)
+            await _extracted(c, run_ids, variables)
 
     p = _proposal_dir()
+    with unit_util.server(p) as url:
+        m = asyncio.run(_metadata(url))
+    run_ids = m["runs"][:per_page]
+    variables = [n for n in m["variables"] if n not in ("run", "proposal")]
     with unit_util.pykern_api_server(path=p) as cfg:
-        asyncio.run(_run(cfg))
+        asyncio.run(_run(cfg, run_ids, variables))
 
 
 def _proposal_dir():
