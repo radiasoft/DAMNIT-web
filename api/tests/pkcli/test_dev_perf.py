@@ -130,6 +130,43 @@ def test_perf_server():
         asyncio.run(_run(url))
 
 
+def test_perf_pykern_api():
+    import asyncio
+    import time
+    from pykern.api import client
+    from pykern.pkcollections import PKDict
+    from pykern.pkdebug import pkdlog
+    from damnit_api import unit_util
+    from damnit_api.pkcli import dev
+
+    per_page = 10
+    run_ids = list(range(1, per_page + 1))
+    variables = list(dev._PERF_VARIABLES.keys())
+
+    async def _extracted(c):
+        t = time.time()
+        tasks = [
+            c.call_api("extracted_data", PKDict(run=run, variable=v))
+            for run in run_ids
+            for v in variables
+        ]
+        results = await asyncio.gather(*tasks)
+        pkdlog(
+            "pykern extracted_data: {:.3f}s  requests={}",
+            time.time() - t,
+            len(tasks),
+        )
+        return results
+
+    async def _run(cfg):
+        async with client.Client(cfg) as c:
+            await _extracted(c)
+
+    p = _proposal_dir()
+    with unit_util.pykern_api_server(path=p) as cfg:
+        asyncio.run(_run(cfg))
+
+
 def _proposal_dir():
     from damnit_api.pkcli import dev
     from pykern import pkunit
