@@ -6,7 +6,6 @@ from damnit.api import Damnit, DataType
 from PIL import Image
 from .db import get_damnit_path
 from .shared.const import DamnitType
-from .utils import b64image
 
 NOT_SUPPORTED_MESSAGE = "Not supported."
 
@@ -66,7 +65,7 @@ def get_png(data):
 
     with io.BytesIO() as buffer:
         image_obj.save(buffer, format="PNG")
-        return b64image(buffer.getvalue())
+        return buffer.getvalue()
 
 
 def get_array(data):

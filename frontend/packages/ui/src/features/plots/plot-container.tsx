@@ -399,6 +399,7 @@ const PlotContainer = ({ plotId }: PlotContainerProps) => {
           h={metadata.shape?.[0]}
           w={metadata.shape?.[1]}
           fit="contain"
+          onLoad={(e) => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
         />
       ) : metadata.type === 'scalar' ? (
         <UnableToDisplayAlert>

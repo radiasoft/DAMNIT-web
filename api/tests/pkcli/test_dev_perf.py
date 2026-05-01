@@ -44,6 +44,62 @@ def test_perf_generate():
     c.close()
 
 
+def test_perf_large_image():
+    """Compare GraphQL vs pykern.api wall-clock time for 10 concurrent large_image requests."""
+    import asyncio
+    import time
+    import httpx
+    from pykern.api import client
+    from pykern.pkcollections import PKDict
+    from pykern.pkdebug import pkdlog
+    from damnit_api import unit_util
+    from damnit_api.pkcli import dev
+
+    runs = list(range(1, 11))
+    v = "large_image"
+
+    async def _graphql(url):
+        async with httpx.AsyncClient(base_url=url, timeout=120.0) as c:
+            t = time.time()
+            results = await asyncio.gather(
+                *[
+                    c.post(
+                        "/graphql",
+                        json={
+                            "query": _EXTRACTED_QUERY,
+                            "variables": {
+                                "proposal": str(dev.LARGE_PROPOSAL),
+                                "run": r,
+                                "variable": v,
+                            },
+                        },
+                    )
+                    for r in runs
+                ]
+            )
+            for r in results:
+                r.raise_for_status()
+            pkdlog(
+                "graphql large_image: {:.3f}s  requests={}", time.time() - t, len(runs)
+            )
+
+    async def _pykern(cfg):
+        async with client.Client(cfg) as c:
+            t = time.time()
+            results = await asyncio.gather(
+                *[c.call_api("image_data", PKDict(run=r, variable=v)) for r in runs]
+            )
+            pkdlog(
+                "pykern large_image: {:.3f}s  requests={}", time.time() - t, len(runs)
+            )
+
+    p = _proposal_dir()
+    with unit_util.server(p) as url:
+        asyncio.run(_graphql(url))
+    with unit_util.pykern_api_server(path=p) as cfg:
+        asyncio.run(_pykern(cfg))
+
+
 def test_perf_server():
     import asyncio
     import time

@@ -7,6 +7,8 @@ from strawberry.types.nodes import SelectedField
 from .. import get_logger
 from ..auth.models import User
 from ..data import get_preview_data
+from ..shared.const import DamnitType
+from ..utils import b64image
 from ..db import async_table, get_session
 from ..metadata.services import get_proposal_meta, update_proposal_meta
 from ..utils import wrap_values
@@ -53,10 +55,12 @@ def group_by_run(record):
     for entry in record:
         key = (entry["proposal"], entry["run"])
         if key not in grouped:
-            grouped[key] = wrap_values({
-                "proposal": entry["proposal"],
-                "run": entry["run"],
-            })
+            grouped[key] = wrap_values(
+                {
+                    "proposal": entry["proposal"],
+                    "run": entry["run"],
+                }
+            )
         # Outer-join placeholder for a run with no matching variables.
         if entry["name"] is None:
             continue
@@ -226,8 +230,11 @@ class Query:
     ) -> JSON:  # FIX: # pyright: ignore[reportInvalidTypeForm]
         # TODO: Convert to Strawberry type
         # and make it analogous to DamitVariable; e.g. `data`
-        return get_preview_data(  # FIX:  # pyright: ignore[reportReturnType]
+        r = get_preview_data(  # FIX:  # pyright: ignore[reportReturnType]
             proposal=database.proposal,
             run=run,
             variable=variable,
         )
+        if r.get("dtype") == DamnitType.PNG.value and isinstance(r.get("data"), bytes):
+            r = {**r, "data": b64image(r["data"])}
+        return r

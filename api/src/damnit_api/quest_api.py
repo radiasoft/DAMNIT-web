@@ -1,9 +1,12 @@
-from pykern.pkdebug import pkdc, pkdlog, pkdp
 from pykern.pkcollections import PKDict
+from pykern.pkdebug import pkdc, pkdlog, pkdp
+import damnit.api
+import damnit_api.data
 import pykern.pkconfig
 import pykern.quest
 
-cfg = pykern.pkconfig.init(
+
+_cfg = pykern.pkconfig.init(
     damnit_path=(None, str, "Path to damnit proposal directory"),
 )
 
@@ -11,12 +14,15 @@ cfg = pykern.pkconfig.init(
 class API(pykern.quest.API):
 
     async def api_extracted_data(self, api_args):
-        import damnit_api.data
         return PKDict(
             damnit_api.data.get_preview_data_from_path(
-                cfg.damnit_path, api_args.run, api_args.variable
+                _cfg.damnit_path, api_args.run, api_args.variable
             )
         )
+
+    async def api_image_data(self, api_args):
+        d = damnit.api.Damnit(_cfg.damnit_path)[api_args.run, api_args.variable].read()
+        return PKDict(data=damnit_api.data.get_png(d), shape=list(d.shape[:2]))
 
     async def api_ping(self, api_args):
         return PKDict(result="pong")
