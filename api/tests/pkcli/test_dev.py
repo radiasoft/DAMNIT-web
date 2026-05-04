@@ -32,9 +32,7 @@ def test_generate_proposal():
 
     import time
 
-    num_runs = 3
     d = pathlib.Path(pykern.pkunit.empty_work_dir())
-    dev._Generator(d, dev.SMALL_PROPOSAL, num_runs, dev._VARIABLES).generate(
-        time.time() - num_runs * 60
-    )
-    _assert_proposal(d.joinpath(str(dev.SMALL_PROPOSAL)), dev.SMALL_PROPOSAL, num_runs)
+    dev.setup_test("small", d)
+    s = dev._SETUP_TEST.small
+    _assert_proposal(d.joinpath(str(s.proposal)), s.proposal, s.runs)

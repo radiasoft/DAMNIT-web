@@ -31,19 +31,6 @@ query ExtractedDataQuery($proposal: String, $run: Int!, $variable: String!) {
 """
 
 
-def test_perf_generate():
-    import sqlite3
-    from damnit_api.pkcli import dev
-
-    p = _proposal_dir()
-    assert len(list(p.joinpath("extracted_data").glob("*.h5"))) == dev.LARGE_NUM_RUNS
-    c = sqlite3.connect(p.joinpath(dev.DB_PATH))
-    assert (
-        c.execute("SELECT count(*) FROM run_info").fetchone()[0] == dev.LARGE_NUM_RUNS
-    )
-    c.close()
-
-
 def test_perf_large_image():
     """Compare GraphQL (RGBA+base64+JSON) vs pykern.api (RGBA+binary+msgpack) for 10 concurrent large_image requests."""
     import asyncio
@@ -68,7 +55,7 @@ def test_perf_large_image():
                         json={
                             "query": _EXTRACTED_QUERY,
                             "variables": {
-                                "proposal": str(dev.LARGE_PROPOSAL),
+                                "proposal": str(dev._SETUP_TEST.large.proposal),
                                 "run": r,
                                 "variable": v,
                             },
@@ -97,7 +84,7 @@ def test_perf_large_image():
                 len(runs),
             )
 
-    p = _proposal_dir()
+    p = _proposal_dir("large")
     with unit_util.server(p) as url:
         asyncio.run(_graphql(url))
     with unit_util.pykern_api_server(path=p) as cfg:
@@ -112,7 +99,7 @@ def test_perf_server():
     from damnit_api import unit_util
     from damnit_api.pkcli import dev
 
-    proposal = str(dev.LARGE_PROPOSAL)
+    proposal = str(dev._SETUP_TEST.large.proposal)
 
     async def _metadata(c):
         t = time.time()
@@ -186,7 +173,7 @@ def test_perf_server():
             variables = [n for n in m["variables"] if n not in ("run", "proposal")]
             await _extracted(c, m["runs"], variables)
 
-    with unit_util.server(_proposal_dir()) as url:
+    with unit_util.server(_proposal_dir("large")) as url:
         asyncio.run(_run(url))
 
 
@@ -200,7 +187,7 @@ def test_perf_pykern_api():
     from damnit_api import unit_util
     from damnit_api.pkcli import dev
 
-    proposal = str(dev.LARGE_PROPOSAL)
+    proposal = str(dev._SETUP_TEST.large.proposal)
     per_page = 10
 
     async def _metadata(url):
@@ -230,7 +217,7 @@ def test_perf_pykern_api():
         async with client.Client(cfg) as c:
             await _extracted(c, run_ids, variables)
 
-    p = _proposal_dir()
+    p = _proposal_dir("large")
     with unit_util.server(p) as url:
         m = asyncio.run(_metadata(url))
     run_ids = m["runs"][:per_page]
@@ -239,16 +226,91 @@ def test_perf_pykern_api():
         asyncio.run(_run(cfg, run_ids, variables))
 
 
-def _proposal_dir():
+def test_perf_wide_table():
+    """Compare GraphQL vs pykern.api for 10 runs × 10 small (256×256) images."""
+    import asyncio
+    import time
+    import httpx
+    from pykern.api import client
+    from pykern.pkcollections import PKDict
+    from pykern.pkdebug import pkdlog
+    from damnit_api import unit_util
+    from damnit_api.pkcli import dev
+
+    async def _metadata(url):
+        async with httpx.AsyncClient(base_url=url, timeout=30.0) as c:
+            r = await c.post(
+                "/graphql",
+                json={
+                    "query": _METADATA_QUERY,
+                    "variables": {"proposal": str(dev._SETUP_TEST.wide.proposal)},
+                },
+            )
+            return r.json()["data"]["metadata"]
+
+    async def _graphql(url, run_ids, variables):
+        async with httpx.AsyncClient(base_url=url, timeout=120.0) as c:
+            t = time.time()
+            tasks = [
+                c.post(
+                    "/graphql",
+                    json={
+                        "query": _EXTRACTED_QUERY,
+                        "variables": {
+                            "proposal": str(dev._SETUP_TEST.wide.proposal),
+                            "run": r,
+                            "variable": v,
+                        },
+                    },
+                )
+                for r in run_ids
+                for v in variables
+            ]
+            results = await asyncio.gather(*tasks)
+            for r in results:
+                r.raise_for_status()
+            pkdlog(
+                "graphql wide_table: {:.3f}s  requests={}",
+                time.time() - t,
+                len(tasks),
+            )
+
+    async def _pykern(cfg, run_ids, variables):
+        async with client.Client(cfg) as c:
+            t = time.time()
+            tasks = [
+                c.call_api("extracted_data", PKDict(run=r, variable=v))
+                for r in run_ids
+                for v in variables
+            ]
+            await asyncio.gather(*tasks)
+            pkdlog(
+                "pykern wide_table: {:.3f}s  requests={}",
+                time.time() - t,
+                len(tasks),
+            )
+
+    p = _proposal_dir("wide")
+    per_page = 10
+    with unit_util.server(p) as url:
+        m = asyncio.run(_metadata(url))
+        run_ids = m["runs"][:per_page]
+        variables = [f"image_{i:02d}" for i in range(10)]
+        asyncio.run(_graphql(url, run_ids, variables))
+    with unit_util.pykern_api_server(path=p) as cfg:
+        asyncio.run(_pykern(cfg, run_ids, variables))
+
+
+def _proposal_dir(kind):
     from damnit_api.pkcli import dev
     from pykern import pkunit
     import pathlib
 
-    d = pathlib.Path(pkunit.empty_work_dir())
-    c = pathlib.Path(pkunit.data_dir()).joinpath("cache", str(dev.LARGE_PROPOSAL))
-    p = d.joinpath(str(dev.LARGE_PROPOSAL))
-    if c.exists():
-        p.symlink_to(c)
-    else:
-        dev.setup_perf_test(str(d))
-    return p
+    c = pathlib.Path(pkunit.data_dir()).joinpath("cache")
+    rv = pathlib.Path(pkunit.empty_work_dir()).joinpath(
+        str(dev._SETUP_TEST[kind].proposal)
+    )
+    if not rv.exists():
+        dev.setup_test(kind, c)
+    rv.symlink_to(c.joinpath(rv.name))
+    return rv

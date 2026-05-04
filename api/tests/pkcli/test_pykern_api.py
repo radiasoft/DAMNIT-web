@@ -12,17 +12,19 @@ def test_pykern_api_extracted_data():
 
     async def _run(cfg):
         async with client.Client(cfg) as c:
-            r = await c.call_api("extracted_data", PKDict(
-                proposal=str(dev.SMALL_PROPOSAL),
-                run=1,
-                variable="simple_integer",
-            ))
+            r = await c.call_api(
+                "extracted_data",
+                PKDict(
+                    proposal=str(dev._SETUP_TEST.small.proposal),
+                    run=1,
+                    variable="simple_integer",
+                ),
+            )
             pkunit.pkeq("number", r.dtype)
             pkunit.pkeq(1, r.data)
 
     d = pathlib.Path(pkunit.empty_work_dir())
-    dev.setup_small_test(str(d))
-    p = d.joinpath(str(dev.SMALL_PROPOSAL))
+    p = dev.setup_test("small", str(d))
     with unit_util.pykern_api_server(path=p) as cfg:
         asyncio.run(_run(cfg))
 

@@ -1,3 +1,4 @@
+from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
 import h5py
 import io
@@ -8,18 +9,6 @@ import damnit.backend.db
 
 
 DB_PATH = "runs.sqlite"
-LARGE_NUM_RUNS = 500
-LARGE_PROPOSAL = 9001
-SMALL_NUM_RUNS = 7
-SMALL_PROPOSAL = 9002
-
-_PERF_VARIABLES = {
-    "large_image": lambda run: np.random.randint(
-        0, 256, size=(2048, 2048, 4), dtype=np.uint8
-    ),
-    "numpy_3d_array": lambda run: np.random.rand(100, 100, 100),
-    "start_time": "start_time",
-}
 
 _RUN_DELTA = 60
 
@@ -60,37 +49,55 @@ _VARIABLES = {
 }
 
 
+_SETUP_TEST = PKDict(
+    large=PKDict(
+        proposal=9001,
+        runs=500,
+        variables=PKDict(
+            large_image=lambda run: np.random.randint(
+                0, 256, size=(2048, 2048, 4), dtype=np.uint8
+            ),
+            numpy_3d_array=lambda run: np.random.rand(100, 100, 100),
+            start_time="start_time",
+        ),
+    ),
+    small=PKDict(
+        proposal=9002,
+        runs=7,
+        variables=_VARIABLES,
+    ),
+    wide=PKDict(
+        proposal=9003,
+        runs=100,
+        variables=PKDict(
+            **_VARIABLES,
+            **{
+                f"image_{i:02d}": (
+                    lambda run, _i=i: np.random.randint(
+                        0, 256, size=(256, 256, 4), dtype=np.uint8
+                    )
+                )
+                for i in range(10)
+            },
+        ),
+    ),
+)
+
+
 def setup_db(path: str) -> None:
-    """Generate synthetic run directories for performance testing.
-
-    Creates a large proposal (``LARGE_PROPOSAL``, ``LARGE_NUM_RUNS``) and a
-    small proposal (``SMALL_PROPOSAL``, ``SMALL_NUM_RUNS``) under ``path``.
-    Each proposal directory contains ``extracted_data/`` with HDF5 files, a
-    populated ``runs.sqlite``, and a minimal ``context.py``.
-
-    Args:
-        path: root directory to write into (required)
-    """
-    gs = [
-        _Generator(path, LARGE_PROPOSAL, LARGE_NUM_RUNS, _VARIABLES),
-        _Generator(path, SMALL_PROPOSAL, SMALL_NUM_RUNS, _VARIABLES),
-    ]
-    t = time.time() - sum(g.num_runs for g in gs) * _RUN_DELTA
-    for g in gs:
+    """Generate large and small proposals under ``path`` for browser testing."""
+    x = [_Generator(path, s.proposal, s.runs, s.variables) for s in _SETUP_TEST.keys()]
+    t = time.time() - sum(g.num_runs for g in x) * _RUN_DELTA
+    for g in x:
         t = g.generate(t)
 
 
-def setup_perf_test(path: str) -> None:
-    gs = [_Generator(path, LARGE_PROPOSAL, LARGE_NUM_RUNS, _PERF_VARIABLES)]
-    t = time.time() - sum(g.num_runs for g in gs) * _RUN_DELTA
-    for g in gs:
-        t = g.generate(t)
-
-
-def setup_small_test(path: str) -> None:
-    """Generate minimal dataset (SMALL_PROPOSAL only) for unit tests."""
-    g = _Generator(path, SMALL_PROPOSAL, SMALL_NUM_RUNS, _VARIABLES)
-    g.generate(time.time() - SMALL_NUM_RUNS * _RUN_DELTA)
+def setup_test(kind: str, path: str) -> None:
+    s = _SETUP_TEST[kind]
+    _Generator(path, s.proposal, s.runs, s.variables).generate(
+        time.time() - s.runs * _RUN_DELTA
+    )
+    return pathlib.Path(path, str(s.proposal))
 
 
 class _Generator:
