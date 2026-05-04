@@ -1,4 +1,4 @@
-import { useEffect, useState, type PropsWithChildren } from 'react'
+import { useEffect, useRef, useState, type PropsWithChildren } from 'react'
 
 import { Alert, Code, Image, Skeleton, Stack, Text } from '@mantine/core'
 import { IconInfoCircle } from '@tabler/icons-react'
@@ -299,8 +299,10 @@ const getPlotMetadata = (
       metadata.type = 'heatmap'
       break
     case 'png':
-    case 'rgba':
       metadata.type = 'image'
+      break
+    case 'rgba':
+      metadata.type = 'rgba'
       break
     case 'number':
     case 'string':
@@ -338,6 +340,29 @@ const selectRuns = createTypedSelector(
     return plot.runs.filter((run) => runsSet.has(run))
   }
 )
+
+/*
+ * -----------------------------
+ *   RgbaCanvas Component
+ * -----------------------------
+ */
+
+type RgbaCanvasProps = {
+  bytes: Uint8Array
+  shape: [number, number]
+}
+
+const RgbaCanvas = ({ bytes, shape }: RgbaCanvasProps) => {
+  const ref = useRef<HTMLCanvasElement>(null)
+  const [height, width] = shape
+  useEffect(() => {
+    if (!ref.current || !bytes) return
+    ref.current
+      .getContext('2d')!
+      .putImageData(new ImageData(new Uint8ClampedArray(bytes), width, height), 0, 0)
+  }, [bytes, width, height])
+  return <canvas ref={ref} width={width} height={height} />
+}
 
 /*
  * ------------------------------------
@@ -395,6 +420,11 @@ const PlotContainer = ({ plotId }: PlotContainerProps) => {
       </Stack>
       {!data.length ? (
         <Skeleton height={430} width={740} radius="xl" />
+      ) : metadata.type === 'rgba' ? (
+        <RgbaCanvas
+          bytes={data[0].data?.value as Uint8Array}
+          shape={metadata.shape!}
+        />
       ) : metadata.type === 'image' ? (
         <Image
           src={data[0].data?.value}
