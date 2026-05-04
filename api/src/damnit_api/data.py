@@ -54,8 +54,7 @@ def get_preview_data_from_path(path, run, variable):
                     data.shape[:2]  # FIX: # pyright: ignore[reportAttributeAccessIssue]
                 )
             }
-            data = get_png(data)
-            dtype = DamnitType.PNG
+            data = get_rgba(data)
 
     return standardize(data, name=variable, dtype=dtype.value, attrs=attrs)
 
@@ -66,6 +65,10 @@ def get_png(data):
     with io.BytesIO() as buffer:
         image_obj.save(buffer, format="PNG")
         return buffer.getvalue()
+
+
+def get_rgba(data):
+    return Image.fromarray(data).convert("RGBA").tobytes()
 
 
 def get_array(data):

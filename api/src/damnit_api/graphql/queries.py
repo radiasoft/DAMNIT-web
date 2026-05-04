@@ -235,6 +235,9 @@ class Query:
             run=run,
             variable=variable,
         )
-        if r.get("dtype") == DamnitType.PNG.value and isinstance(r.get("data"), bytes):
+        if r.get("dtype") in (
+            DamnitType.PNG.value,
+            DamnitType.RGBA.value,
+        ) and isinstance(r.get("data"), bytes):
             r = {**r, "data": b64image(r["data"])}
         return r

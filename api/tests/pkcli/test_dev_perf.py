@@ -45,7 +45,7 @@ def test_perf_generate():
 
 
 def test_perf_large_image():
-    """Compare GraphQL vs pykern.api wall-clock time for 10 concurrent large_image requests."""
+    """Compare GraphQL (RGBA+base64+JSON) vs pykern.api (RGBA+binary+msgpack) for 10 concurrent large_image requests."""
     import asyncio
     import time
     import httpx
@@ -80,7 +80,9 @@ def test_perf_large_image():
             for r in results:
                 r.raise_for_status()
             pkdlog(
-                "graphql large_image: {:.3f}s  requests={}", time.time() - t, len(runs)
+                "graphql large_image (rgba+base64+json): {:.3f}s  requests={}",
+                time.time() - t,
+                len(runs),
             )
 
     async def _pykern(cfg):
@@ -90,7 +92,9 @@ def test_perf_large_image():
                 *[c.call_api("image_data", PKDict(run=r, variable=v)) for r in runs]
             )
             pkdlog(
-                "pykern large_image: {:.3f}s  requests={}", time.time() - t, len(runs)
+                "pykern large_image (rgba+binary+msgpack): {:.3f}s  requests={}",
+                time.time() - t,
+                len(runs),
             )
 
     p = _proposal_dir()

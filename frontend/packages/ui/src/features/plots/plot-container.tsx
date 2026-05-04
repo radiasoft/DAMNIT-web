@@ -263,6 +263,7 @@ const getPlotData = (
       }
     }
     case 'png':
+    case 'rgba':
     default:
       return {
         data: { value: varData },
@@ -298,6 +299,7 @@ const getPlotMetadata = (
       metadata.type = 'heatmap'
       break
     case 'png':
+    case 'rgba':
       metadata.type = 'image'
       break
     case 'number':

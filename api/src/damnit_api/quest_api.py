@@ -22,7 +22,9 @@ class API(pykern.quest.API):
 
     async def api_image_data(self, api_args):
         d = damnit.api.Damnit(_cfg.damnit_path)[api_args.run, api_args.variable].read()
-        return PKDict(data=damnit_api.data.get_png(d), shape=list(d.shape[:2]))
+        return PKDict(
+            data=damnit_api.data.get_rgba(d), shape=list(d.shape[:2]), dtype="rgba"
+        )
 
     async def api_ping(self, api_args):
         return PKDict(result="pong")
