@@ -15,14 +15,15 @@ _cfg = pykern.pkconfig.init(
 class API(pykern.quest.API):
 
     async def api_table(self, api_args):
-        p = damnit_api.db.find_proposal_path(_cfg.damnit_path, api_args.proposal)
-        return [
-            PKDict(
-                damnit_api.data.<what function>(
-                    p, r, api_args.variable
-                )
-            ) for r in api_args.runs
-        ]
+        from damnit_api.graphql.queries import fetch_variables
+
+        return PKDict(
+            runs=await fetch_variables(
+                api_args.proposal,
+                limit=api_args.runs_per_page,
+                offset=(api_args.start_page - 1) * api_args.runs_per_page,
+            )
+        )
 
     async def api_image(self, api_args):
         import damnit_api.db

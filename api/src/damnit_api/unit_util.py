@@ -1,4 +1,4 @@
-from pykern.pkdebug import pkdc, pkdlog, pkdp
+from pykern.pkdebug import pkdc, pkdlog, pkdp, pkdexc
 import contextlib
 import os
 import pykern.pkconst
@@ -15,6 +15,7 @@ def server(path):
     def _start():
         import os
         import uvicorn
+
         os.environ["DW_API_DAMNIT_PATH"] = str(path)
         from damnit_api import main
         from damnit_api.shared import settings
@@ -56,18 +57,21 @@ def pykern_api_server(path=None):
     if pid == 0:
         try:
             if path is not None:
+                os.environ["DW_API_DAMNIT_PATH"] = str(path)
                 from pykern import pkconfig as _pkconfig
+
                 _pkconfig.reset_state_for_testing(
-                    PKDict(DAMNIT_API_QUEST_API_DAMNIT_PATH=str(path))
+                    PKDict(DAMNIT_API_PROPOSAL_API_DAMNIT_PATH=str(path))
                 )
-            from damnit_api import quest_api
+            from damnit_api import proposal_api
+
             _server.start(
-                api_classes=[quest_api.API],
+                api_classes=[proposal_api.API],
                 attr_classes=[],
                 http_config=cfg.copy(),
             )
         except Exception as e:
-            pkdlog("exception={} stack={}", e)
+            pkdlog("exception={} stack={}", e, pkdexc())
         finally:
             os._exit(0)
     time.sleep(1)
