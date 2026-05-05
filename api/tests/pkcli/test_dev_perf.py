@@ -6,8 +6,6 @@ pytestmark = pytest.mark.skipif(
     reason="set DAMNIT_API_PERF_TEST to run",
 )
 
-_PER_PAGE = 10
-
 _DEFERRED_QUERY = """
 query DeferredTableDataQuery($proposal: String, $page: Int, $per_page: Int, $names: [String!]) {
   runs(database: { proposal: $proposal }, page: $page, per_page: $per_page) {
@@ -90,7 +88,9 @@ def test_image_large():
 
 def test_table_large():
     """Lightweight+deferred table load: GraphQL (2 requests/page) vs pykern.api (1 request/page)."""
-    _table("large")
+    from damnit_api.pkcli import dev
+
+    _table("large", dev._SETUP_TEST.large.runs)
 
 
 def _proposal_dir(kind):
@@ -110,7 +110,7 @@ def _proposal_dir(kind):
     return rv
 
 
-def _table(kind):
+def _table(kind, num_runs):
     """Lightweight+deferred (GraphQL) vs single call (pykern.api) for one page of runs."""
     import asyncio
     import time
@@ -134,7 +134,7 @@ def _table(kind):
                         "variables": {
                             "proposal": proposal,
                             "page": 1,
-                            "per_page": _PER_PAGE,
+                            "per_page": num_runs,
                         },
                     },
                 )
@@ -157,7 +157,7 @@ def _table(kind):
                             "variables": {
                                 "proposal": proposal,
                                 "page": 1,
-                                "per_page": _PER_PAGE,
+                                "per_page": num_runs,
                                 "names": heavy,
                             },
                         },
@@ -175,12 +175,12 @@ def _table(kind):
         async with client.Client(cfg) as c:
             r = await c.call_api(
                 "table",
-                PKDict(proposal=proposal, start_page=1, runs_per_page=_PER_PAGE),
+                PKDict(proposal=proposal, start_page=1, runs_per_page=num_runs),
             )
         pkdlog("pykern table: {:.3f}s  runs={}", time.time() - t, len(r.runs))
 
     p = _proposal_dir(kind)
-    with unit_util.server(p) as url:
+    with unit_util.uvicorn_server(p) as url:
         asyncio.run(_graphql(url))
     with unit_util.pykern_api_server(path=p) as cfg:
         asyncio.run(_pykern(cfg))
