@@ -2,6 +2,7 @@ from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
 import damnit.api
 import damnit_api.data
+import damnit_api.db
 import pykern.pkconfig
 import pykern.quest
 
@@ -13,17 +14,17 @@ _cfg = pykern.pkconfig.init(
 
 class API(pykern.quest.API):
 
-    async def api_extracted_data(self, api_args):
-        import damnit_api.db
-
+    async def api_table(self, api_args):
         p = damnit_api.db.find_proposal_path(_cfg.damnit_path, api_args.proposal)
-        return PKDict(
-            damnit_api.data.get_preview_data_from_path(
-                p, api_args.run, api_args.variable
-            )
-        )
+        return [
+            PKDict(
+                damnit_api.data.<what function>(
+                    p, r, api_args.variable
+                )
+            ) for r in api_args.runs
+        ]
 
-    async def api_image_data(self, api_args):
+    async def api_image(self, api_args):
         import damnit_api.db
 
         p = damnit_api.db.find_proposal_path(_cfg.damnit_path, api_args.proposal)
