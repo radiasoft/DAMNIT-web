@@ -1,8 +1,9 @@
 import { type PayloadAction } from '@reduxjs/toolkit'
 
-import { getTable, getTableData } from './table-data.slice'
+import { getTable, getTableData, getTableViaPykernApi } from './table-data.slice'
 import { type TableInfo } from './table-data.types'
 
+import { USE_PYKERN_TABLE } from '../../constants'
 import { type AppDispatch } from '../../redux/store'
 import { isEmpty } from '../../utils/helpers'
 
@@ -17,6 +18,11 @@ export const getDeferredTable =
     pageSize: number
   }) =>
   async (dispatch: AppDispatch) => {
+    if (USE_PYKERN_TABLE) {
+      await dispatch(getTableViaPykernApi({ proposal, page, pageSize }))
+      return
+    }
+
     const action = (await dispatch(
       getTable({ proposal, page, pageSize, lightweight: true })
     )) as PayloadAction<TableInfo>

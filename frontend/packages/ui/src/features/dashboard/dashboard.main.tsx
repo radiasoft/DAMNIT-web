@@ -21,6 +21,7 @@ import { type TableProps } from '../table'
 
 import { CenteredLoader } from '../../components/feedback'
 import { type TabsProps } from '../../components/tabs'
+import { PAGINATED } from '../../constants'
 import { useAppDispatch, useAppSelector } from '../../redux/hooks'
 
 import styles from './dashboard.module.css'
@@ -141,7 +142,7 @@ function DashboardMain({ tableProps, contextFileProps }: DashBoardMainProps) {
   const mainTabElements = {
     table: (
       <Suspense fallback={<CenteredLoader />}>
-        <Table {...tableProps} />
+        <Table {...tableProps} paginated={PAGINATED} />
       </Suspense>
     ),
     plots: (

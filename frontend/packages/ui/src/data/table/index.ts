@@ -7,6 +7,7 @@ export {
   default as tableDataReducer,
   getTable,
   getTableData,
+  getTableViaPykernApi,
   resetTable,
   updateTable,
 } from './table-data.slice'

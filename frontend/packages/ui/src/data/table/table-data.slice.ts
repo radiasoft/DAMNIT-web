@@ -40,6 +40,28 @@ export const getTable = createAsyncThunk(
   }
 )
 
+export const getTableViaPykernApi = createAsyncThunk(
+  'tableData/getViaPykernApi',
+  async ({ proposal, page = 1, pageSize = 10 }: TableOptions, { getState }) => {
+    const { tableData } = getState() as { tableData: TableDataState }
+    const [metadata, data] = await Promise.all([
+      tableData.metadata.runs.length === 0
+        ? TableDataServices.getTableMetadata({ proposal })
+        : Promise.resolve(tableData.metadata),
+      TableDataServices.getTableDataViaPykernApi({ proposal, page, pageSize }),
+    ])
+    return { data, metadata } as TableInfo
+  },
+  {
+    condition: ({ page = 1, pageSize = 10 }, { getState }) => {
+      const { tableData } = getState() as { tableData: TableDataState }
+      const offset = (page - 1) * pageSize
+      const pageRuns = tableData.metadata.runs.slice(offset, offset + pageSize)
+      return !(pageRuns.length > 0 && pageRuns.every((run) => tableData.data[run] != null))
+    },
+  }
+)
+
 export const getTableData = createAsyncThunk(
   'tableData/getData',
   async ({
@@ -102,6 +124,14 @@ const slice = createSlice({
         }
       }
     )
+    builder.addCase(getTableViaPykernApi.fulfilled, (state, action) => {
+      if (!action.payload) return
+      const { data, metadata } = action.payload
+      if (!isEmpty(data)) {
+        state.data = { ...state.data, ...data }
+        state.metadata = metadata
+      }
+    })
     builder.addCase(getTableData.fulfilled, (state, action) => {
       // TODO: Add pending and rejected
       const data = action.payload

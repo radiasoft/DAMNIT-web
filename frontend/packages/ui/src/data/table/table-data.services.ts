@@ -13,6 +13,8 @@ import {
   type TableMetadataOptions,
 } from './table-data.types'
 import { client } from '../../graphql/apollo'
+import { pykernApiService } from '../../services/pykern-api'
+import { DTYPES } from '../../constants'
 import { type VariableDataItem, type VariableValue } from '../../types'
 import { isEmpty } from '../../utils/helpers'
 
@@ -169,6 +171,49 @@ async function getTable({
 
 /*
  * -----------------------------
+ *   Query: getTableViaPykernApi
+ * -----------------------------
+ */
+
+type PykernVariable = {
+  name: string
+  value: unknown
+  dtype: string
+}
+
+async function getTableDataViaPykernApi({
+  proposal,
+  page = 1,
+  pageSize = 10,
+}: TableDataOptions): Promise<TableData> {
+  return new Promise((resolve, reject) => {
+    pykernApiService.call(
+      'table',
+      { proposal, start_page: page, runs_per_page: pageSize },
+      (r) => {
+        const { runs } = r as { runs: Array<{ variables: PykernVariable[] }> }
+        resolve(
+          flattenRuns(
+            runs.map((run) => ({
+              variables: run.variables.map((v) => ({
+                name: v.name,
+                dtype: v.dtype,
+                value:
+                  v.dtype === DTYPES.image && v.value instanceof Uint8Array
+                    ? URL.createObjectURL(new Blob([v.value], { type: 'image/png' }))
+                    : (v.value as VariableValue),
+              })),
+            }))
+          )
+        )
+      },
+      reject,
+    )
+  })
+}
+
+/*
+ * -----------------------------
  *   Subscription: latest data
  * -----------------------------
  */
@@ -182,6 +227,7 @@ export const LATEST_DATA_SUBSCRIPTION = gql`
 const TableDataServices = {
   getTable,
   getTableData,
+  getTableDataViaPykernApi,
   getTableMetadata,
 }
 

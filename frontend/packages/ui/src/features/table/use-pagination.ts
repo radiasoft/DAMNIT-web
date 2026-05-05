@@ -4,7 +4,8 @@ import { range } from '@mantine/hooks'
 
 import type { Rectangle } from './types'
 import { getDeferredTable } from '../../data/table/table-data.thunks'
-import { getTable } from '../../data/table'
+import { getTable, getTableViaPykernApi } from '../../data/table'
+import { USE_PYKERN_TABLE } from '../../constants'
 import { useAppDispatch } from '../../redux/hooks'
 import { sortedInsert, sortedSearch } from '../../utils/array'
 
@@ -112,7 +113,11 @@ export const usePagination = ({
     }
 
     if (!enabled) {
-      dispatch(getTable({ proposal, pageSize: 10000 }))
+      dispatch(
+        USE_PYKERN_TABLE
+          ? getTableViaPykernApi({ proposal, pageSize: 10000 })
+          : getTable({ proposal, pageSize: 10000 })
+      )
       return
     }
 
