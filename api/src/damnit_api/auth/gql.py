@@ -32,12 +32,15 @@ class User:
         from ..shared.settings import settings
 
         if settings.is_local:
-            from ..metadata.services import _local_proposal_meta, _local_proposal_number
+            from ..metadata.services import (
+                _local_proposal_meta,
+                _local_proposal_numbers,
+            )
 
-            proposal_number = await _local_proposal_number()
-            if proposal_number is None:
-                return []
-            return [ProposalMeta.from_pydantic(_local_proposal_meta(proposal_number))]
+            return [
+                ProposalMeta.from_pydantic(_local_proposal_meta(n))
+                for n in _local_proposal_numbers()
+            ]
 
         mymdc, session = info.context.mymdc, info.context.session
 

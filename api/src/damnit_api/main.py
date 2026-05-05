@@ -54,7 +54,9 @@ def create_app():
     app = FastAPI(lifespan=lifespan, swagger_ui_init_oauth=swagger_oauth)
 
     @app.exception_handler(HTTPException)
-    async def http_exception_handler(request: Request, exc: HTTPException):  # noqa: RUF029
+    async def http_exception_handler(
+        request: Request, exc: HTTPException
+    ):  # noqa: RUF029
         request_path = request.url.path
         if (
             not settings.is_local
@@ -68,7 +70,9 @@ def create_app():
         )
 
     @app.exception_handler(errors.DWError)
-    async def base_exception_handler(request: Request, exc: errors.DWError):  # noqa: RUF029
+    async def base_exception_handler(
+        request: Request, exc: errors.DWError
+    ):  # noqa: RUF029
         status_code = exc.code or status.HTTP_500_INTERNAL_SERVER_ERROR
 
         content: dict[str, str | int | dict] = {
@@ -113,7 +117,12 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="DAMNIT Web API Server")
     parser.add_argument("--path", type=str, help="Path to amore/damnit directory")
-    parser.add_argument("--pykern-port", type=int, default=8001, help="Port for pykern.api WebSocket server")
+    parser.add_argument(
+        "--pykern-port",
+        type=int,
+        default=8001,
+        help="Port for pykern.api WebSocket server",
+    )
     args = parser.parse_args()
 
     if args.path:
@@ -123,15 +132,9 @@ if __name__ == "__main__":
         if not path.is_dir():
             parser.error(f"'{args.path}' does not exist or is not a directory")
 
-        missing = [
-            name
-            for name in ("runs.sqlite", "context.py", "extracted_data")
-            if not (path / name).exists()
-        ]
-        if missing:
+        if not any((d / "runs.sqlite").exists() for d in path.iterdir() if d.is_dir()):
             parser.error(
-                f"'{args.path}' is not a valid DAMNIT directory"
-                f" (missing: {', '.join(missing)})"
+                f"'{args.path}' contains no proposal directories (no subdir with runs.sqlite)"
             )
 
         os.environ["DW_API_DAMNIT_PATH"] = args.path
@@ -141,6 +144,7 @@ if __name__ == "__main__":
         from pykern.api import server as _server
         from pykern.pkcollections import PKDict
         from damnit_api import quest_api
+
         _server.start(
             api_classes=[quest_api.API],
             attr_classes=[],

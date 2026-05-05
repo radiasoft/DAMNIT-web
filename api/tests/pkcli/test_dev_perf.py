@@ -306,11 +306,11 @@ def _proposal_dir(kind):
     from pykern import pkunit
     import pathlib
 
-    c = pathlib.Path(pkunit.data_dir()).joinpath("cache")
-    rv = pathlib.Path(pkunit.empty_work_dir()).joinpath(
-        str(dev._SETUP_TEST[kind].proposal)
-    )
-    if not rv.exists():
-        dev.setup_test(kind, c)
-    rv.symlink_to(c.joinpath(rv.name))
-    return rv
+    cache = pathlib.Path(pkunit.data_dir()).joinpath("cache")
+    work = pathlib.Path(pkunit.empty_work_dir())
+    proposal = str(dev._SETUP_TEST[kind].proposal)
+    link = work.joinpath(proposal)
+    if not cache.joinpath(proposal).exists():
+        dev.setup_test(kind, str(cache))
+    link.symlink_to(cache.joinpath(proposal))
+    return work

@@ -1,3 +1,5 @@
+import functools
+import sqlite3
 from collections import defaultdict
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -19,7 +21,6 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from .shared.const import DEFAULT_PROPOSAL
 from .utils import Registry, create_map, find_proposal
 
 DAMNIT_PATH = "usr/Shared/amore/"
@@ -30,7 +31,7 @@ DAMNIT_PATH = "usr/Shared/amore/"
 
 
 class DatabaseSessionManager(metaclass=Registry):
-    def __init__(self, proposal: str = DEFAULT_PROPOSAL):
+    def __init__(self, proposal: str):
         self.proposal = proposal
         self.root_path = get_damnit_path(proposal)
         self._engine = create_async_engine(self.db_path)
@@ -193,12 +194,40 @@ async def async_variable_tags(proposal):
 # Etc.
 
 
-def get_damnit_path(proposal_number: str = DEFAULT_PROPOSAL) -> str:
+@functools.lru_cache(maxsize=None)
+def _proposal_map(proposals_dir: str) -> dict:
+    rv = {}
+    for d in Path(proposals_dir).iterdir():
+        if not d.is_dir():
+            continue
+        s = d / "runs.sqlite"
+        if not s.exists():
+            continue
+        try:
+            with sqlite3.connect(s) as c:
+                r = c.execute(
+                    "SELECT value FROM metameta WHERE key='proposal'"
+                ).fetchone()
+                if r:
+                    rv[r[0]] = str(d)
+        except Exception:
+            pass
+    return rv
+
+
+def find_proposal_path(proposals_dir: str, proposal: str) -> str:
+    m = _proposal_map(proposals_dir)
+    if proposal not in m:
+        raise RuntimeError(f"Proposal {proposal!r} not found in {proposals_dir!r}")
+    return m[proposal]
+
+
+def get_damnit_path(proposal_number: str) -> str:
     """Returns the directory of the given proposal."""
     from .shared.settings import settings
 
     if settings.is_local:
-        return str(settings.damnit_path)
+        return find_proposal_path(str(settings.damnit_path), proposal_number)
 
     path = find_proposal(proposal_number)
     if not path:

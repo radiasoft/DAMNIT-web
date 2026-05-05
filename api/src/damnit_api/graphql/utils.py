@@ -6,12 +6,11 @@ import strawberry
 from sqlalchemy import or_, select
 
 from ..db import async_table, get_session
-from ..shared.const import DEFAULT_PROPOSAL
 
 
 @strawberry.input
 class DatabaseInput:
-    proposal: str | None = strawberry.field(default=DEFAULT_PROPOSAL)
+    proposal: str | None = strawberry.field(default=None)
     path: str | None = strawberry.field(default=strawberry.UNSET)
 
 

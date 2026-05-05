@@ -24,8 +24,8 @@ def test_pykern_api_extracted_data():
             pkunit.pkeq(1, r.data)
 
     d = pathlib.Path(pkunit.empty_work_dir())
-    p = dev.setup_test("small", str(d))
-    with unit_util.pykern_api_server(path=p) as cfg:
+    dev.setup_test("small", str(d))
+    with unit_util.pykern_api_server(path=d) as cfg:
         asyncio.run(_run(cfg))
 
 

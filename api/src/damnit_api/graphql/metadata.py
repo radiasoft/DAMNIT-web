@@ -8,7 +8,7 @@ from .models import DamnitRun
 
 
 @alru_cache(ttl=10)
-async def fetch_metadata(proposal=db.DEFAULT_PROPOSAL):
+async def fetch_metadata(proposal: str):
     """Fetch the per-proposal metadata snapshot from SQLite.
 
     Returns a dict with `runs`, `variables`, `tags`, and `timestamp`. Result

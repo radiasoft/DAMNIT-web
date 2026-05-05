@@ -26,39 +26,30 @@ LOCAL_CYCLE = "197001"
 
 def _local_proposal_meta(proposal_number: ProposalNumber) -> ProposalMeta:
     """Synthetic metadata for local/dev mode."""
+    from ..db import find_proposal_path
     from ..shared.settings import settings
 
+    path = find_proposal_path(str(settings.damnit_path), str(proposal_number))
     return ProposalMeta(
         id=0,
         number=proposal_number,
         cycle=LOCAL_CYCLE,
         instrument="LOC",
-        path=str(settings.damnit_path),
-        title=str(settings.damnit_path),
+        path=path,
+        title=path,
         principal_investigator="Local Development",
         start_date=datetime(1970, 1, 1, tzinfo=UTC),
         end_date=None,
-        damnit_path=str(settings.damnit_path),
+        damnit_path=path,
     )
 
 
-async def _local_proposal_number() -> int | None:
-    from sqlalchemy import select
+def _local_proposal_numbers() -> list[int]:
+    """Return all proposal numbers discovered in the local proposals directory."""
+    from ..db import _proposal_map
+    from ..shared.settings import settings
 
-    from ..db import async_table, get_session
-    from ..shared.const import DEFAULT_PROPOSAL
-
-    table = await async_table(DEFAULT_PROPOSAL, name="metameta")
-    if table is None:
-        return None
-
-    async with get_session(DEFAULT_PROPOSAL) as session:
-        result = await session.execute(
-            select(table.c.value).where(table.c.key == "proposal")
-        )
-        value = result.scalar()
-
-    return int(value) if value else None
+    return [int(p) for p in _proposal_map(str(settings.damnit_path))]
 
 
 async def _fetch_proposal_meta(
