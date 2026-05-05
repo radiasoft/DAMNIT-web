@@ -1,10 +1,10 @@
 import os
 import pytest
 
-pytestmark = pytest.mark.skipif(
-    not os.environ.get("DAMNIT_API_PERF_TEST"),
-    reason="set DAMNIT_API_PERF_TEST to run",
-)
+_FLAG = os.environ.get("DAMNIT_API_PERF_TEST")
+pytestmark = pytest.mark.skipif(not _FLAG, reason="set DAMNIT_API_PERF_TEST to run")
+
+_ONLY_PYKERN = _FLAG == "pykern"
 
 _DEFERRED_QUERY = """
 query DeferredTableDataQuery($proposal: String, $page: Int, $per_page: Int, $names: [String!]) {
@@ -82,8 +82,9 @@ def test_image_large():
                 len(runs),
             )
 
-    with unit_util.server(_proposal_dir("large")) as url:
-        asyncio.run(_graphql(url, **_args("large")))
+    if not _ONLY_PYKERN:
+        with unit_util.uvicorn_server(_proposal_dir("large")) as url:
+            asyncio.run(_graphql(url, **_args("large")))
 
 
 def test_table_large():
@@ -91,6 +92,12 @@ def test_table_large():
     from damnit_api.pkcli import dev
 
     _table("large", dev._SETUP_TEST.large.runs)
+
+def test_table_wide():
+    """Lightweight+deferred table load: GraphQL (2 requests/page) vs pykern.api (1 request/page)."""
+    from damnit_api.pkcli import dev
+
+    _table("wide", dev._SETUP_TEST.wide.runs)
 
 
 def _proposal_dir(kind):
@@ -180,7 +187,8 @@ def _table(kind, num_runs):
         pkdlog("pykern table: {:.3f}s  runs={}", time.time() - t, len(r.runs))
 
     p = _proposal_dir(kind)
-    with unit_util.uvicorn_server(p) as url:
-        asyncio.run(_graphql(url))
+    if not _ONLY_PYKERN:
+        with unit_util.uvicorn_server(p) as url:
+            asyncio.run(_graphql(url))
     with unit_util.pykern_api_server(path=p) as cfg:
         asyncio.run(_pykern(cfg))
