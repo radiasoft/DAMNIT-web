@@ -33,7 +33,7 @@ query GetTableData($proposal: String, $page: Int, $per_page: Int) {
 """
 
 
-def test_perf_large_image():
+def test_large_image():
     """Compare GraphQL (RGBA+base64+JSON) vs pykern.api (RGBA+binary+msgpack) for 10 concurrent large_image requests."""
     import asyncio
     import time
@@ -75,30 +75,8 @@ def test_perf_large_image():
         asyncio.run(_pykern(cfg))
 
 
-def test_perf_pykern_api():
-    import asyncio
-    from damnit_api import unit_util
-    from damnit_api.pkcli import dev
-
-    proposal = str(dev._SETUP_TEST.large.proposal)
-
-    p = _proposal_dir("large")
-    with unit_util.server(p) as url:
-        m = asyncio.run(_gql_metadata(url, proposal))
-    with unit_util.pykern_api_server(path=p) as cfg:
-        asyncio.run(
-            _pykern_extracted(
-                cfg,
-                proposal,
-                m["runs"][:_PER_PAGE],
-                [n for n in m["variables"] if n not in ("run", "proposal")],
-                "pykern extracted_data",
-            )
-        )
-
-
-def test_perf_server():
-    """Simulate the UI: page through runs and fetch extracted data per visible page."""
+def test_server():
+    """Compare GraphQL vs pykern.api: page through all runs fetching extracted data."""
     import asyncio
     import time
     import httpx
@@ -106,7 +84,10 @@ def test_perf_server():
     from damnit_api import unit_util
     from damnit_api.pkcli import dev
 
-    async def _run(url, proposal):
+    p = _proposal_dir("large")
+    proposal = str(dev._SETUP_TEST.large.proposal)
+
+    async def _graphql(url):
         m = await _gql_metadata(url, proposal)
         runs = m["runs"]
         variables = [n for n in m["variables"] if n not in ("run", "proposal")]
@@ -115,29 +96,33 @@ def test_perf_server():
         pages = (len(runs) + _PER_PAGE - 1) // _PER_PAGE
         async with httpx.AsyncClient(base_url=url, timeout=120.0) as c:
             for page in range(1, pages + 1):
-                r = await c.post(
-                    "/graphql",
-                    json={
-                        "query": _RUNS_QUERY,
-                        "variables": {
-                            "proposal": proposal,
-                            "page": page,
-                            "per_page": _PER_PAGE,
+                (
+                    await c.post(
+                        "/graphql",
+                        json={
+                            "query": _RUNS_QUERY,
+                            "variables": {
+                                "proposal": proposal,
+                                "page": page,
+                                "per_page": _PER_PAGE,
+                            },
                         },
-                    },
-                )
-                r.raise_for_status()
+                    )
+                ).raise_for_status()
                 page_runs = runs[(page - 1) * _PER_PAGE : page * _PER_PAGE]
                 await _gql_extracted(
-                    url, proposal, page_runs, variables, f"page {page}"
+                    url, proposal, page_runs, variables, f"graphql page {page}"
                 )
-        pkdlog("total: {:.3f}s  pages={}", time.time() - t, pages)
+        pkdlog("graphql total: {:.3f}s  pages={}", time.time() - t, pages)
+        return runs, variables
 
-    with unit_util.server(_proposal_dir("large")) as url:
-        asyncio.run(_run(url, str(dev._SETUP_TEST.large.proposal)))
+    with unit_util.server(p) as url:
+        runs, variables = asyncio.run(_graphql(url))
+    with unit_util.pykern_api_server(path=p) as cfg:
+        asyncio.run(_pykern_extracted(cfg, proposal, runs, variables, "pykern server"))
 
 
-def test_perf_wide_table():
+def test_wide_table():
     """Compare GraphQL vs pykern.api for 10 runs x 10 small (256x256) images."""
     import asyncio
     from damnit_api import unit_util
