@@ -65,7 +65,9 @@ def test_perf_large_image():
     p = _proposal_dir("large")
     with unit_util.server(p) as url:
         asyncio.run(
-            _gql_extracted(url, proposal, runs, [v], "graphql large_image (rgba+base64+json)")
+            _gql_extracted(
+                url, proposal, runs, [v], "graphql large_image (rgba+base64+json)"
+            )
         )
     with unit_util.pykern_api_server(path=p) as cfg:
         asyncio.run(_pykern(cfg))
@@ -82,10 +84,16 @@ def test_perf_pykern_api():
     p = _proposal_dir("large")
     with unit_util.server(p) as url:
         m = asyncio.run(_gql_metadata(url, proposal))
-    run_ids = m["runs"][:per_page]
-    variables = [n for n in m["variables"] if n not in ("run", "proposal")]
     with unit_util.pykern_api_server(path=p) as cfg:
-        asyncio.run(_pykern_extracted(cfg, proposal, run_ids, variables, "pykern extracted_data"))
+        asyncio.run(
+            _pykern_extracted(
+                cfg,
+                proposal,
+                m["runs"][:per_page],
+                [n for n in m["variables"] if n not in ("run", "proposal")],
+                "pykern extracted_data",
+            )
+        )
 
 
 def test_perf_server():
@@ -130,8 +138,13 @@ def test_perf_server():
             len(m["runs"]),
         )
         await _runs(url, len(m["runs"]))
-        variables = [n for n in m["variables"] if n not in ("run", "proposal")]
-        await _gql_extracted(url, proposal, m["runs"], variables, "extracted_data")
+        await _gql_extracted(
+            url,
+            proposal,
+            m["runs"],
+            [n for n in m["variables"] if n not in ("run", "proposal")],
+            "extracted_data",
+        )
 
     with unit_util.server(_proposal_dir("large")) as url:
         asyncio.run(_run(url))
@@ -151,9 +164,13 @@ def test_perf_wide_table():
         m = asyncio.run(_gql_metadata(url, proposal))
         run_ids = m["runs"][:per_page]
         variables = [f"image_{i:02d}" for i in range(10)]
-        asyncio.run(_gql_extracted(url, proposal, run_ids, variables, "graphql wide_table"))
+        asyncio.run(
+            _gql_extracted(url, proposal, run_ids, variables, "graphql wide_table")
+        )
     with unit_util.pykern_api_server(path=p) as cfg:
-        asyncio.run(_pykern_extracted(cfg, proposal, run_ids, variables, "pykern wide_table"))
+        asyncio.run(
+            _pykern_extracted(cfg, proposal, run_ids, variables, "pykern wide_table")
+        )
 
 
 async def _gql_extracted(url, proposal, run_ids, variables, label):
