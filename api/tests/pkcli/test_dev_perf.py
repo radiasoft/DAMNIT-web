@@ -34,11 +34,60 @@ query LightweightTableDataQuery($proposal: String, $page: Int, $per_page: Int) {
 }
 """
 
+_EXTRACTED_QUERY = """
+query ExtractedDataQuery($proposal: String, $run: Int!, $variable: String!) {
+  extracted_data(database: { proposal: $proposal }, run: $run, variable: $variable)
+}
+"""
+
 _METADATA_QUERY = """
 query TableMetadataQuery($proposal: String) {
   metadata(database: { proposal: $proposal })
 }
 """
+
+_LARGE_IMAGE = "large_image"
+
+
+def test_image_large():
+    """Fetch a single large image N times via GraphQL deferred query."""
+    import asyncio
+    import time
+    import httpx
+    from pykern.pkcollections import PKDict
+    from pykern.pkdebug import pkdlog
+    from damnit_api import unit_util
+    from damnit_api.pkcli import dev
+
+    def _args(kind):
+        s = dev._SETUP_TEST.large
+        return PKDict(proposal=str(s.proposal), runs=tuple(range(1, s.runs + 1)))
+
+    async def _graphql(url, proposal, runs):
+        async with httpx.AsyncClient(base_url=url, timeout=120.0) as c:
+            t = time.time()
+            for run in runs:
+                (
+                    await c.post(
+                        "/graphql",
+                        json={
+                            "query": _EXTRACTED_QUERY,
+                            "variables": {
+                                "proposal": proposal,
+                                "run": run,
+                                "variable": _LARGE_IMAGE,
+                            },
+                        },
+                    )
+                ).raise_for_status()
+            pkdlog(
+                "graphql large_image: {:.3f}s  runs={}",
+                time.time() - t,
+                len(runs),
+            )
+
+    with unit_util.server(_proposal_dir("large")) as url:
+        asyncio.run(_graphql(url, **_args("large")))
 
 
 def test_table_large():
