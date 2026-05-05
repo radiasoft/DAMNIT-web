@@ -143,12 +143,10 @@ noauth_router = APIRouter(prefix="/oauth", tags=["auth"])
 
 @noauth_router.get("/userinfo")
 async def noauth_userinfo():
-    from ..metadata.services import LOCAL_CYCLE, _local_proposal_number
+    from ..metadata.services import LOCAL_CYCLE, _local_proposal_numbers
 
-    proposals = {}
-    proposal_number = await _local_proposal_number()
-    if proposal_number:
-        proposals = {LOCAL_CYCLE: [proposal_number]}
+    numbers = _local_proposal_numbers()
+    proposals = {LOCAL_CYCLE: numbers} if numbers else {}
 
     return {**models.DEV_USER.model_dump(), "proposals_by_year_half": proposals}
 

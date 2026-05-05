@@ -4,6 +4,7 @@ import h5py
 import io
 import numpy as np
 import pathlib
+import PIL.Image
 import time
 import damnit.backend.db
 
@@ -189,6 +190,10 @@ class _Generator:
                 return v.item()
             if v.ndim == 1 and v.dtype == np.uint8:
                 return v.tobytes()
+            if v.ndim == 3 and v.dtype == np.uint8:
+                b = io.BytesIO()
+                PIL.Image.fromarray(v).save(b, format="PNG")
+                return b.getvalue()
             b = io.BytesIO()
             np.save(b, v)
             return b.getvalue()

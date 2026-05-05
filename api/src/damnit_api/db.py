@@ -209,7 +209,7 @@ def _proposal_map(proposals_dir: str) -> dict:
                     "SELECT value FROM metameta WHERE key='proposal'"
                 ).fetchone()
                 if r:
-                    rv[r[0]] = str(d)
+                    rv[str(r[0])] = str(d)
         except Exception:
             pass
     return rv

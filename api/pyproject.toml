@@ -66,6 +66,9 @@ dev = [
     { include-group = "test" },
 ]
 
+[project.scripts]
+damnit-api = "damnit_api.damnit_api_console:main"
+
 [tool.uv]
 default-groups = []
 
