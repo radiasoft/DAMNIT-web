@@ -9,7 +9,7 @@ function pngToDataUrl(bytes: Uint8Array): string {
 async function getExtractedValue({ proposal, run, variable }: ExtractedDataOptions) {
   return new Promise<Record<string, unknown>>((resolve, reject) => {
     pykernApiService.call(
-      'extracted_data',
+      'image',
       { proposal, run: Number(run), variable },
       (r) => {
         const result = r as Record<string, unknown>

@@ -303,6 +303,7 @@ const getPlotMetadata = (
       break
     case 'rgba':
       metadata.type = 'rgba'
+      metadata.shape = (extracted.metadata as Record<string, unknown>).shape as [number, number]
       break
     case 'number':
     case 'string':

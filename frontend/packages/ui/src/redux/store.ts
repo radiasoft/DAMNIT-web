@@ -9,7 +9,12 @@ export const setupStore = (preloadedState?: Partial<RootState>) => {
   return configureStore({
     reducer,
     middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware()
+      getDefaultMiddleware({
+        serializableCheck: {
+          ignoredPaths: ['extractedData.data'],
+          ignoredActionPaths: ['payload.data'],
+        },
+      })
         .prepend(listenerMiddleware.middleware)
         .concat(authApi.middleware, contextfileApi.middleware),
     preloadedState,
