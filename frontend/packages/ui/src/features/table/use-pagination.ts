@@ -5,7 +5,7 @@ import { range } from '@mantine/hooks'
 import type { Rectangle } from './types'
 import { getDeferredTable } from '../../data/table/table-data.thunks'
 import { fetchTableMetadata, getTable, getTableViaPykernApi } from '../../data/table'
-import { USE_PYKERN_TABLE } from '../../constants'
+import { USE_PYKERN_API } from '../../constants'
 import { useAppDispatch, useAppSelector } from '../../redux/hooks'
 import { sortedInsert, sortedSearch } from '../../utils/array'
 
@@ -70,7 +70,7 @@ export const usePagination = ({
 
   // Effect: Fetch metadata once when proposal changes (pykern path only)
   useEffect(() => {
-    if (!proposal || !USE_PYKERN_TABLE) return
+    if (!proposal || !USE_PYKERN_API) return
     dispatch(fetchTableMetadata({ proposal }))
   }, [proposal, dispatch])
 
@@ -122,16 +122,16 @@ export const usePagination = ({
     }
 
     if (!enabled) {
-      if (USE_PYKERN_TABLE && !hasMetadata) return
+      if (USE_PYKERN_API && !hasMetadata) return
       dispatch(
-        USE_PYKERN_TABLE
+        USE_PYKERN_API
           ? getTableViaPykernApi({ proposal, pageSize: 10000 })
           : getTable({ proposal, pageSize: 10000 })
       )
       return
     }
 
-    if (USE_PYKERN_TABLE && !hasMetadata) {
+    if (USE_PYKERN_API && !hasMetadata) {
       return
     }
 

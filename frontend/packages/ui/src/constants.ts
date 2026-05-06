@@ -26,7 +26,7 @@ export const DTYPES = {
   timestamp: 'timestamp',
 }
 
-export const USE_PYKERN_TABLE = import.meta.env.VITE_PYKERN_API === 'true'
+export const USE_PYKERN_API = import.meta.env.VITE_PYKERN_API === 'true'
 export const PAGINATED = import.meta.env.VITE_TABLE_ALL !== 'true'
 
 export const EXCLUDED_VARIABLES = ['proposal', 'added_at']
