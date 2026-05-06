@@ -94,11 +94,12 @@ def test_image_large():
         pkdlog("pykern large_image: {:.3f}s  runs={}", time.time() - t, len(runs))
 
     p = _proposal_dir("large")
+    a = _args("large")
     if not _ONLY_PYKERN:
         with unit_util.uvicorn_server(p) as url:
-            asyncio.run(_graphql(url, **_args("large")))
+            asyncio.run(_graphql(url, **a))
     with unit_util.pykern_api_server(path=p) as cfg:
-        asyncio.run(_pykern(cfg, **_args("large")))
+        asyncio.run(_pykern(cfg, **a))
 
 
 def test_table_large():
