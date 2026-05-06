@@ -46,10 +46,11 @@ _LARGE_IMAGE = "large_image"
 
 
 def test_image_large():
-    """Fetch a single large image N times via GraphQL deferred query."""
+    """Fetch large images via GraphQL extracted_data vs pykern.api image."""
     import asyncio
     import time
     import httpx
+    from pykern.api import client
     from pykern.pkcollections import PKDict
     from pykern.pkdebug import pkdlog
     from damnit_api import unit_util
@@ -82,9 +83,22 @@ def test_image_large():
                 len(runs),
             )
 
+    async def _pykern(cfg, proposal, runs):
+        t = time.time()
+        async with client.Client(cfg) as c:
+            for run in runs:
+                await c.call_api(
+                    "image",
+                    PKDict(proposal=proposal, run=run, variable=_LARGE_IMAGE),
+                )
+        pkdlog("pykern large_image: {:.3f}s  runs={}", time.time() - t, len(runs))
+
+    p = _proposal_dir("large")
     if not _ONLY_PYKERN:
-        with unit_util.uvicorn_server(_proposal_dir("large")) as url:
+        with unit_util.uvicorn_server(p) as url:
             asyncio.run(_graphql(url, **_args("large")))
+    with unit_util.pykern_api_server(path=p) as cfg:
+        asyncio.run(_pykern(cfg, **_args("large")))
 
 
 def test_table_large():
