@@ -26,8 +26,21 @@ LOCAL_CYCLE = "197001"
 
 def _local_proposal_meta(proposal_number: ProposalNumber) -> ProposalMeta:
     """Synthetic metadata for local/dev mode."""
+    import sqlite3
     from ..db import find_proposal_path
     from ..shared.settings import settings
+
+    def _start_date(p):
+        try:
+            with sqlite3.connect(Path(p) / "runs.sqlite") as c:
+                r = c.execute(
+                    "SELECT start_time FROM run_info ORDER BY run LIMIT 1"
+                ).fetchone()
+                if r and r[0]:
+                    return datetime.fromtimestamp(r[0], tz=UTC)
+        except Exception:
+            pass
+        return datetime(1970, 1, 1, tzinfo=UTC)
 
     path = find_proposal_path(str(settings.damnit_path), str(proposal_number))
     return ProposalMeta(
@@ -38,7 +51,7 @@ def _local_proposal_meta(proposal_number: ProposalNumber) -> ProposalMeta:
         path=path,
         title=path,
         principal_investigator="Local Development",
-        start_date=datetime(1970, 1, 1, tzinfo=UTC),
+        start_date=_start_date(path),
         end_date=None,
         damnit_path=path,
     )
