@@ -4,17 +4,16 @@ import numpy as np
 import xarray as xr
 from damnit.api import Damnit, DataType
 from PIL import Image
+
 from .db import get_damnit_path
 from .shared.const import DamnitType
+from .utils import b64image
 
 NOT_SUPPORTED_MESSAGE = "Not supported."
 
 
 def get_preview_data(proposal, run, variable):
-    return get_preview_data_from_path(get_damnit_path(str(proposal)), run, variable)
-
-
-def get_preview_data_from_path(path, run, variable):
+    path = get_damnit_path(str(proposal))
     try:
         var_data = Damnit(path)[run, variable]
     except KeyError:
@@ -54,7 +53,8 @@ def get_preview_data_from_path(path, run, variable):
                     data.shape[:2]  # FIX: # pyright: ignore[reportAttributeAccessIssue]
                 )
             }
-            data = get_rgba(data)
+            data = get_png(data)
+            dtype = DamnitType.PNG
 
     return standardize(data, name=variable, dtype=dtype.value, attrs=attrs)
 
@@ -64,7 +64,7 @@ def get_png(data):
 
     with io.BytesIO() as buffer:
         image_obj.save(buffer, format="PNG")
-        return buffer.getvalue()
+        return b64image(buffer.getvalue())
 
 
 def get_rgba(data):
