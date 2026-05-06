@@ -30,17 +30,13 @@ def _local_proposal_meta(proposal_number: ProposalNumber) -> ProposalMeta:
     from ..db import find_proposal_path
     from ..shared.settings import settings
 
-    def _start_date(p):
-        try:
-            with sqlite3.connect(Path(p) / "runs.sqlite") as c:
-                r = c.execute(
-                    "SELECT start_time FROM run_info ORDER BY run LIMIT 1"
-                ).fetchone()
-                if r and r[0]:
-                    return datetime.fromtimestamp(r[0], tz=UTC)
-        except Exception:
-            pass
-        return datetime(1970, 1, 1, tzinfo=UTC)
+    def _start_date(path):
+        with sqlite3.connect(Path(path).joinpath("runs.sqlite")) as c:
+            r = c.execute(
+                "SELECT start_time FROM run_info ORDER BY run LIMIT 1"
+            ).fetchone()
+            if r and r[0]:
+                return datetime.fromtimestamp(r[0], tz=UTC)
 
     path = find_proposal_path(str(settings.damnit_path), str(proposal_number))
     return ProposalMeta(
