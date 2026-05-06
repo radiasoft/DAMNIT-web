@@ -5,14 +5,9 @@ import damnit_api.data
 import damnit_api.db
 import damnit_api.graphql.models
 import damnit_api.graphql.queries
+import damnit_api.shared.settings
 import damnit_api.shared.const
-import pykern.pkconfig
 import pykern.quest
-
-
-_cfg = pykern.pkconfig.init(
-    damnit_path=(None, str, "Path to proposals parent directory"),
-)
 
 
 class API(pykern.quest.API):
@@ -43,11 +38,11 @@ class API(pykern.quest.API):
 
     async def api_image(self, api_args):
         d = damnit.api.Damnit(
-            damnit_api.db.find_proposal_path(_cfg.damnit_path, api_args.proposal)
+            damnit_api.db.find_proposal_path(
+                str(damnit_api.shared.settings.settings.damnit_path),
+                api_args.proposal,
+            )
         )[api_args.run, api_args.variable].read()
         return PKDict(
             data=damnit_api.data.get_rgba(d), shape=list(d.shape[:2]), dtype="rgba"
         )
-
-    async def api_ping(self, api_args):
-        return PKDict(result="pong")

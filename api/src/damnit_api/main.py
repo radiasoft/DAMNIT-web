@@ -134,7 +134,6 @@ if __name__ == "__main__":
             )
 
         os.environ["DW_API_DAMNIT_PATH"] = args.path
-        os.environ["DAMNIT_API_PROPOSAL_API_DAMNIT_PATH"] = args.path
 
     def _start_pykern_api(port):
         from pykern.api import server as _server

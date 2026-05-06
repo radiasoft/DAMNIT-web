@@ -15,13 +15,11 @@ def uvicorn_server(path):
 
     def _child():
         import os
-        import uvicorn
 
         os.environ["DW_API_DAMNIT_PATH"] = str(path)
         from damnit_api import main
-        from damnit_api.shared import settings
+        import uvicorn
 
-        settings.settings = settings.Settings(damnit_path=path)
         c = uvicorn.Config(
             main.create_app(),
             host=pykern.pkconst.LOCALHOST_IP,
@@ -49,9 +47,6 @@ def pykern_api_server(path):
             os.environ["DW_API_DAMNIT_PATH"] = str(path)
             from pykern import pkconfig
 
-            pkconfig.reset_state_for_testing(
-                PKDict(DAMNIT_API_PROPOSAL_API_DAMNIT_PATH=str(path))
-            )
         from damnit_api import proposal_api
 
         server.start(
@@ -73,7 +68,7 @@ def _server_start(result, child):
             pkdlog("exception={} stack={}", e, pkdexc())
         finally:
             os._exit(0)
-    time.sleep(1)
+    time.sleep(2)
     try:
         yield result
     finally:
