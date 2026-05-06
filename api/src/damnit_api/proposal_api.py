@@ -37,11 +37,14 @@ class API(pykern.quest.API):
                 offset=(api_args.start_page - 1) * api_args.runs_per_page,
             )
 
-        return PKDict(runs=[PKDict(variables=tuple(_convert(x))) for x in await _rows()])
+        return PKDict(
+            runs=[PKDict(variables=tuple(_convert(x))) for x in await _rows()]
+        )
 
     async def api_image(self, api_args):
-        p = damnit_api.db.find_proposal_path(_cfg.damnit_path, api_args.proposal)
-        d = damnit.api.Damnit(p)[api_args.run, api_args.variable].read()
+        d = damnit.api.Damnit(
+            damnit_api.db.find_proposal_path(_cfg.damnit_path, api_args.proposal)
+        )[api_args.run, api_args.variable].read()
         return PKDict(
             data=damnit_api.data.get_rgba(d), shape=list(d.shape[:2]), dtype="rgba"
         )
