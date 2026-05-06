@@ -4,9 +4,9 @@ import { range } from '@mantine/hooks'
 
 import type { Rectangle } from './types'
 import { getDeferredTable } from '../../data/table/table-data.thunks'
-import { getTable, getTableViaPykernApi } from '../../data/table'
+import { fetchTableMetadata, getTable, getTableViaPykernApi } from '../../data/table'
 import { USE_PYKERN_TABLE } from '../../constants'
-import { useAppDispatch } from '../../redux/hooks'
+import { useAppDispatch, useAppSelector } from '../../redux/hooks'
 import { sortedInsert, sortedSearch } from '../../utils/array'
 
 class Pages {
@@ -53,6 +53,9 @@ export const usePagination = ({
   pageSize = 10,
 }: UsePaginationOptions) => {
   const dispatch = useAppDispatch()
+  const hasMetadata = useAppSelector(
+    (state) => state.tableData.metadata.runs.length > 0
+  )
 
   // Reference: Loaded pages
   const pagesRef = useRef(new Pages())
@@ -64,6 +67,12 @@ export const usePagination = ({
     width: 0,
     height: 0,
   })
+
+  // Effect: Fetch metadata once when proposal changes (pykern path only)
+  useEffect(() => {
+    if (!proposal || !USE_PYKERN_TABLE) return
+    dispatch(fetchTableMetadata({ proposal }))
+  }, [proposal, dispatch])
 
   // Callback: Handle new page
   const handleNewPage = useCallback(
@@ -113,11 +122,16 @@ export const usePagination = ({
     }
 
     if (!enabled) {
+      if (USE_PYKERN_TABLE && !hasMetadata) return
       dispatch(
         USE_PYKERN_TABLE
           ? getTableViaPykernApi({ proposal, pageSize: 10000 })
           : getTable({ proposal, pageSize: 10000 })
       )
+      return
+    }
+
+    if (USE_PYKERN_TABLE && !hasMetadata) {
       return
     }
 
@@ -137,7 +151,7 @@ export const usePagination = ({
         loadPage(page)
       }
     })
-  }, [loadPage, pageSize, visibleRegion, proposal, enabled, dispatch])
+  }, [loadPage, pageSize, visibleRegion, proposal, enabled, dispatch, hasMetadata])
 
   return { onVisibleRegionChanged }
 }

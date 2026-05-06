@@ -10,7 +10,7 @@ import {
 } from '@reduxjs/toolkit'
 
 import TableDataServices from './table-data.services'
-import { type TableDataOptions, type TableInfo } from './table-data.types'
+import { type TableData, type TableDataOptions, type TableInfo } from './table-data.types'
 import { type Maybe } from '../../types'
 import { isEmpty } from '../../utils/helpers'
 
@@ -40,24 +40,32 @@ export const getTable = createAsyncThunk(
   }
 )
 
+export const fetchTableMetadata = createAsyncThunk(
+  'tableData/fetchMetadata',
+  async ({ proposal }: { proposal: string }) => {
+    return await TableDataServices.getTableMetadata({ proposal })
+  },
+  {
+    condition: (_, { getState }) => {
+      const { tableData } = getState() as { tableData: TableDataState }
+      return tableData.metadata.runs.length === 0
+    },
+  }
+)
+
 export const getTableViaPykernApi = createAsyncThunk(
   'tableData/getViaPykernApi',
-  async ({ proposal, page = 1, pageSize = 10 }: TableOptions, { getState }) => {
-    const { tableData } = getState() as { tableData: TableDataState }
-    const [metadata, data] = await Promise.all([
-      tableData.metadata.runs.length === 0
-        ? TableDataServices.getTableMetadata({ proposal })
-        : Promise.resolve(tableData.metadata),
-      TableDataServices.getTableDataViaPykernApi({ proposal, page, pageSize }),
-    ])
-    return { data, metadata } as TableInfo
+  async ({ proposal, page = 1, pageSize = 10 }: TableOptions) => {
+    return await TableDataServices.getTableDataViaPykernApi({ proposal, page, pageSize })
   },
   {
     condition: ({ page = 1, pageSize = 10 }, { getState }) => {
       const { tableData } = getState() as { tableData: TableDataState }
+      const runs = tableData.metadata.runs
+      if (runs.length === 0) return false
       const offset = (page - 1) * pageSize
-      const pageRuns = tableData.metadata.runs.slice(offset, offset + pageSize)
-      return !(pageRuns.length > 0 && pageRuns.every((run) => tableData.data[run] != null))
+      if (offset >= runs.length) return false
+      return !runs.slice(offset, offset + pageSize).every((run) => tableData.data[run] != null)
     },
   }
 )
@@ -124,12 +132,15 @@ const slice = createSlice({
         }
       }
     )
+    builder.addCase(fetchTableMetadata.fulfilled, (state, action) => {
+      if (action.payload) {
+        state.metadata = action.payload
+      }
+    })
     builder.addCase(getTableViaPykernApi.fulfilled, (state, action) => {
-      if (!action.payload) return
-      const { data, metadata } = action.payload
-      if (!isEmpty(data)) {
+      const data = action.payload as TableData | undefined
+      if (data && !isEmpty(data)) {
         state.data = { ...state.data, ...data }
-        state.metadata = metadata
       }
     })
     builder.addCase(getTableData.fulfilled, (state, action) => {

@@ -5,6 +5,7 @@ export {
 export { selectVariables } from './table-data.selectors'
 export {
   default as tableDataReducer,
+  fetchTableMetadata,
   getTable,
   getTableData,
   getTableViaPykernApi,
