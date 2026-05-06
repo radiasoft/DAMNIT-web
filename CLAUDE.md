@@ -194,12 +194,13 @@ Other conventions:
 
 ## Test data setup
 
-`run` is a symlink to `api/tests/perf_data/cache`. To regenerate all test proposals after changing data generation code:
+To regenerate all test proposals after changing data generation code:
 
 ```bash
 cd api
 rm -rf /tests/perf_data/cache
 VIRTUAL_ENV= uv run damnit-api dev setup-db tests/perf_data/cache
+ln -s api/tests/perf_data/cache ../run
 ```
 
 ## Running the app locally
