@@ -238,7 +238,11 @@ cd frontend
 pnpm run dev:app --port 8008
 ```
 
-Make sure you tunnel 8008 and 8000. Port 8001 (pykern.api) is proxied through Vite and does not need a separate tunnel.
+Make sure you tunnel 8008 and 8000. Port 8001 (pykern.api) is proxied
+through Vite and does not need a separate tunnel.
+
+- VITE_PYKERN_API=true - runs websocket + msgpack
+- VITE_TABLE_ALL=true - turns off pagination
 
 ## Dev installation (for RadiaSoft)
 
