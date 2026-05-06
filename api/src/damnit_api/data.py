@@ -8,8 +8,13 @@ from PIL import Image
 from .db import get_damnit_path
 from .shared.const import DamnitType
 from .utils import b64image
+import pykern.pkconfig
 
 NOT_SUPPORTED_MESSAGE = "Not supported."
+
+_cfg = pykern.pkconfig.init(
+    rgba=(True, bool, "rgba returns rgba (formerly png)"),
+)
 
 
 def get_preview_data(proposal, run, variable):
@@ -53,8 +58,11 @@ def get_preview_data(proposal, run, variable):
                     data.shape[:2]  # FIX: # pyright: ignore[reportAttributeAccessIssue]
                 )
             }
-            data = get_png(data)
-            dtype = DamnitType.PNG
+            if _cfg.rgba:
+                data = get_rgba(data)
+            else:
+                data = get_png(data)
+                dtype = DamnitType.PNG
 
     return standardize(data, name=variable, dtype=dtype.value, attrs=attrs)
 
