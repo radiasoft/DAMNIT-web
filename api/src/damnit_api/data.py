@@ -13,7 +13,7 @@ import pykern.pkconfig
 NOT_SUPPORTED_MESSAGE = "Not supported."
 
 _cfg = pykern.pkconfig.init(
-    rgba=(True, bool, "rgba returns rgba (formerly png)"),
+    rgba=(False, bool, "rgba returns rgba (formerly png)"),
 )
 
 

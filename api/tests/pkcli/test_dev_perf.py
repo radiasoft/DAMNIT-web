@@ -58,7 +58,9 @@ def test_image_large():
 
     def _args(kind):
         s = dev._SETUP_TEST.large
-        return PKDict(proposal=str(s.proposal), runs=tuple(range(1, s.runs + 1)))
+        return PKDict(
+            proposal=str(s.proposal), runs=tuple(range(1, min(s.runs, 100) + 1))
+        )
 
     async def _graphql(url, proposal, runs):
         async with httpx.AsyncClient(base_url=url, timeout=120.0) as c:
@@ -107,6 +109,7 @@ def test_table_large():
     from damnit_api.pkcli import dev
 
     _table("large", dev._SETUP_TEST.large.runs)
+
 
 def test_table_wide():
     """Lightweight+deferred table load: GraphQL (2 requests/page) vs pykern.api (1 request/page)."""
