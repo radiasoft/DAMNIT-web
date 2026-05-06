@@ -94,8 +94,8 @@ export const usePagination = ({
 
   // Callback: On visible region changed
   const onVisibleRegionChanged = useCallback((rect: Rectangle) => {
-    setVisibleRegion(rect)
-  }, [])
+    if (enabled) setVisibleRegion(rect)
+  }, [enabled])
 
   const loadPage = useCallback(
     async (page: number) => {
