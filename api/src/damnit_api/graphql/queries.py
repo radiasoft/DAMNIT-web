@@ -55,12 +55,10 @@ def group_by_run(record):
     for entry in record:
         key = (entry["proposal"], entry["run"])
         if key not in grouped:
-            grouped[key] = wrap_values(
-                {
-                    "proposal": entry["proposal"],
-                    "run": entry["run"],
-                }
-            )
+            grouped[key] = wrap_values({
+                "proposal": entry["proposal"],
+                "run": entry["run"],
+            })
         # Outer-join placeholder for a run with no matching variables.
         if entry["name"] is None:
             continue
@@ -239,5 +237,5 @@ class Query:
             DamnitType.PNG.value,
             DamnitType.RGBA.value,
         ) and isinstance(r.get("data"), bytes):
-            r = {**r, "data": b64image(r["data"])}
+            r["data"] = b64image(r["data"])
         return r

@@ -72,7 +72,7 @@ def get_png(data):
 
     with io.BytesIO() as buffer:
         image_obj.save(buffer, format="PNG")
-        return b64image(buffer.getvalue())
+        return buffer.getvalue()
 
 
 def get_rgba(data):

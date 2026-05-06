@@ -54,9 +54,7 @@ def create_app():
     app = FastAPI(lifespan=lifespan, swagger_ui_init_oauth=swagger_oauth)
 
     @app.exception_handler(HTTPException)
-    async def http_exception_handler(
-        request: Request, exc: HTTPException
-    ):  # noqa: RUF029
+    async def http_exception_handler(request: Request, exc: HTTPException):  # noqa: RUF029
         request_path = request.url.path
         if (
             not settings.is_local
@@ -70,9 +68,7 @@ def create_app():
         )
 
     @app.exception_handler(errors.DWError)
-    async def base_exception_handler(
-        request: Request, exc: errors.DWError
-    ):  # noqa: RUF029
+    async def base_exception_handler(request: Request, exc: errors.DWError):  # noqa: RUF029
         status_code = exc.code or status.HTTP_500_INTERNAL_SERVER_ERROR
 
         content: dict[str, str | int | dict] = {
