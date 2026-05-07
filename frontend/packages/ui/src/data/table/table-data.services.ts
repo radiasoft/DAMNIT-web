@@ -14,9 +14,17 @@ import {
 } from './table-data.types'
 import { client } from '../../graphql/apollo'
 import { pykernApiService } from '../../services/pykern-api'
-import { DTYPES } from '../../constants'
+import { DTYPES, GLIDE_HACK } from '../../constants'
 import { type VariableDataItem, type VariableValue } from '../../types'
 import { isEmpty } from '../../utils/helpers'
+
+function pngToUrl(bytes: Uint8Array): string {
+  if (GLIDE_HACK) {
+    const binary = Array.from(bytes).map((b) => String.fromCharCode(b)).join('')
+    return `data:image/png;base64,${btoa(binary)}`
+  }
+  return URL.createObjectURL(new Blob([bytes], { type: 'image/png' }))
+}
 
 /*
  * -----------------------------
@@ -200,7 +208,7 @@ async function getTableDataViaPykernApi({
                 dtype: v.dtype,
                 value:
                   v.dtype === DTYPES.image && v.value instanceof Uint8Array
-                    ? URL.createObjectURL(new Blob([v.value], { type: 'image/png' }))
+                    ? pngToUrl(v.value)
                     : (v.value as VariableValue),
               })),
             }))

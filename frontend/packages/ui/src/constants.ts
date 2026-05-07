@@ -27,7 +27,12 @@ export const DTYPES = {
 }
 
 export const USE_PYKERN_API = import.meta.env.VITE_PYKERN_API === 'true'
-export const PAGINATED = import.meta.env.VITE_TABLE_ALL !== 'true'
+export const PAGINATED = import.meta.env.VITE_TABLE_ALL !== undefined && import.meta.env.VITE_TABLE_ALL !== 'undefined'
+  ? import.meta.env.VITE_TABLE_ALL !== 'true'
+  : !USE_PYKERN_API
+export const GLIDE_HACK = import.meta.env.VITE_GLIDE_HACK !== undefined && import.meta.env.VITE_GLIDE_HACK !== 'undefined'
+  ? import.meta.env.VITE_GLIDE_HACK === 'true'
+  : USE_PYKERN_API
 
 export const EXCLUDED_VARIABLES = ['proposal', 'added_at']
 
