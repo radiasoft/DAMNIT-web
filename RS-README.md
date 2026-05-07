@@ -91,7 +91,7 @@ server.start(api_classes=[quest_api.API], attr_classes=[], http_config=PKDict(ap
 
 ## Start Frontend
 
-In another window, start the vite server:
+In another window, start the vite server with paginated, GraphQL UI:
 
 ```bash
 cd ~/src/radiasoft/DAMNIT-web/frontend
@@ -101,7 +101,20 @@ pnpm run dev:app --port 8008
 Make sure you tunnel 8008 and 8000. Port 8001 (pykern.api) is proxied
 through Vite and does not need a separate tunnel.
 
-- VITE_PYKERN_API=true - runs websocket + msgpack
-- VITE_TABLE_ALL=true - turns off pagination
-
 Visit http://localhost:8008
+
+To use Pykern API, set these
+
+```bash
+VITE_PYKERN_API=true pnpm run dev:app --port 8008
+```
+
+Optional flags:
+
+- VITE_PYKERN_API=true - runs Pykern API (websocket + msgpack)
+- VITE_TABLE_ALL=true - turns off pagination
+- VITE_GLIDE_HACK=true - converts table PNG image bytes to data URLs (instead of blob URLs)
+
+`VITE_GLIDE_HACK` works around a glide data grid issue where image
+cells rendered on a canvas do not repaint after an async blob URL load
+completes, causing some thumbnails to appear blank.
