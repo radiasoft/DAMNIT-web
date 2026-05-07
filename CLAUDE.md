@@ -214,11 +214,21 @@ cd api
 VIRTUAL_ENV= uv run -m damnit_api.main --path ../run
 ```
 
+Clearing `VIRTUAL_ENV` avoids issues with Pyenv used at RadiaSoft vs uv.
+
+
 Use `--pykern-port` to override the pykern.api port (default 8001):
 
 ```bash
 VIRTUAL_ENV= uv run -m damnit_api.main --path ../run --pykern-port 8002
 ```
+
+Use `DAMNIT_API_DATA_RGBA=1` to remove PNG conversion in damnit_api.data.get_preview_data:
+
+```bash
+DAMNIT_API_DATA_RGBA=1 VIRTUAL_ENV= uv run -m damnit_api.main --path ../run --pykern-port 8002
+```
+
 
 To run the pykern.api server standalone (e.g. for interactive testing without FastAPI):
 
