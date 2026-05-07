@@ -20,6 +20,10 @@ Specifically, we need your help with three things:
 2. Visualisation interactivity/features - The structure of the underlying data is variable, so the xarray-like data sent to the frontend (data, dims, coords, attrs) is also variable. This makes it difficult to implement advanced plotting features in the frontend, since it doesn't have an easy way to get information about what kind of plot it should be creating. We'd like advice on: how to build and support interactive visualisations (pan, zoom, slice selection, value inspection) on the frontend given this dynamic data (while supporting the downsampling from point 1).
 3. Table formatting/interactivity - Similarly to (2): the dynamic nature of the context file means that the tables do not have a schema, the columns and their types are not stable or well defined. The columns potentially containing anything makes implementing 'standard' table features like column-level formatting (colours, units, conditional formatting), search, sort, filtering, etc..., quite awkward. We'd like advice on how to handle supporting these features given our use case of dynamic column types.
 
+## Installation on operation
+
+See [[RS-README]] for how to install and run the services.
+
 ## Rob's notes from meeting 4/17/26
 
 This is in emacs org mode.
@@ -191,110 +195,3 @@ FastAPI/Strawberry patterns) with these radiasoft-style improvements:
 Other conventions:
 - pykern is at `../radiasoft/pykern` (relative to this repo)
 - HDF5 variable groups mirror the structure in `run/p6256/extracted_data/p6256_r1.h5` for now, but we'll create our own structure for the test data.
-
-## Test data setup
-
-To regenerate all test proposals after changing data generation code:
-
-```bash
-cd api
-rm -rf /tests/perf_data/cache
-VIRTUAL_ENV= uv run damnit-api dev setup-db tests/perf_data/cache
-ln -s api/tests/perf_data/cache ../run
-```
-
-## Running the app locally
-
-In a separate window, start the api server (VIRTUAL_ENV= suppresses a warning).
-`--path` points to the proposals parent directory; all subdirs with `runs.sqlite` are discovered automatically.
-This starts both the FastAPI server (port 8000) and the pykern.api WebSocket server (port 8001):
-
-```bash
-cd api
-VIRTUAL_ENV= uv run -m damnit_api.main --path ../run
-```
-
-Clearing `VIRTUAL_ENV` avoids issues with Pyenv used at RadiaSoft vs uv.
-
-
-Use `--pykern-port` to override the pykern.api port (default 8001):
-
-```bash
-VIRTUAL_ENV= uv run -m damnit_api.main --path ../run --pykern-port 8002
-```
-
-Use `DAMNIT_API_DATA_RGBA=1` to remove PNG conversion in damnit_api.data.get_preview_data:
-
-```bash
-DAMNIT_API_DATA_RGBA=1 VIRTUAL_ENV= uv run -m damnit_api.main --path ../run --pykern-port 8002
-```
-
-
-To run the pykern.api server standalone (e.g. for interactive testing without FastAPI):
-
-```bash
-cd api
-DAMNIT_API_QUEST_API_DAMNIT_PATH=../run VIRTUAL_ENV= uv run python -c "
-from pykern.api import server
-from pykern.pkcollections import PKDict
-from damnit_api import quest_api
-server.start(api_classes=[quest_api.API], attr_classes=[], http_config=PKDict(api_uri='/api-v1', tcp_ip='127.0.0.1', tcp_port=8001))
-"
-```
-
-In another window, start the vite server:
-
-```bash
-cd frontend
-pnpm run dev:app --port 8008
-```
-
-Make sure you tunnel 8008 and 8000. Port 8001 (pykern.api) is proxied
-through Vite and does not need a separate tunnel.
-
-- VITE_PYKERN_API=true - runs websocket + msgpack
-- VITE_TABLE_ALL=true - turns off pagination
-
-## Dev installation (for RadiaSoft)
-
-uv is a python environment manager. Installs cleanly as one binary in `~/.local/bin`:
-
-```bash
-curl -Ls https://astral.sh/uv/install.sh | sh
-```
-
-7z is needed to unpack the compressed file given to RadiaSoft (cat prevents color output):
-
-```bash
-sudo dnf install -y p7zip  p7zip-plugins | cat
-```
-
-Create run directory, which assumes `~/tmp/p6256.7z`:
-
-```bash
-mkdir -p ~/src/radiasoft
-cd ~/src/radiasoft
-git clone https://github.com/radiasoft/DAMNIT-web
-cd DAMNIT-web
-mkdir -p run
-cd run
-7z x ~/tmp/p6256.7z
-```
-
-pnpm is a wrapper for npm. It has a complicated install to put one binary in place so clean that up after the curl installer:
-
-```bash
-curl -fsSL https://get.pnpm.io/install.sh | sh -
-emacs ~/.bashrc # remove the lines added
-mv ~/.local/share/pnpm/.tools/pnpm-exe/*.*.*/pnpm ~/.local/bin/
-rm -rf ~/.local/share/pnpm
-```
-
-Install Vite and React:
-
-```bash
-cd frontend
-echo VITE_API=http://localhost:8000 > apps/app/.env
-# cat avoids color
-pnpm install | cat
-```
