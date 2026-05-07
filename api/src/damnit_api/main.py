@@ -136,11 +136,11 @@ if __name__ == "__main__":
         os.environ["DW_API_DAMNIT_PATH"] = args.path
 
     def _start_pykern_api(port):
-        from pykern.api import server as _server
+        from pykern.api import server
         from pykern.pkcollections import PKDict
         from damnit_api import proposal_api
 
-        _server.start(
+        server.start(
             api_classes=[proposal_api.API],
             attr_classes=[],
             http_config=PKDict(api_uri="/api-v1", tcp_ip="127.0.0.1", tcp_port=port),

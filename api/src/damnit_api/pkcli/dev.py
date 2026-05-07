@@ -70,7 +70,7 @@ _SETUP_TEST = PKDict(
         variables=PKDict(
             **_VARIABLES,
             **{
-                f"image_{i:02d}": lambda run, _i=i: _sphere(run, 256)
+                f"image_{i:02d}": lambda run, _i=i: _sphere(run * 10 + _i, 256)
                 for i in range(10)
             },
         ),
@@ -214,7 +214,7 @@ class _Generator:
                     )
         db.close()
 
-def _sphere(run, size=2048):
+def _sphere(run, size):
     def _rgba(signal):
         r = (signal * 255).astype(np.uint8)
         return [
