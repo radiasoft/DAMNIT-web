@@ -55,11 +55,11 @@ export const fetchTableMetadata = createAsyncThunk(
 
 export const getTableViaPykernApi = createAsyncThunk(
   'tableData/getViaPykernApi',
-  async ({ proposal, page = 1, pageSize = 10 }: TableOptions) => {
+  async ({ proposal, page, pageSize }: TableOptions) => {
     return await TableDataServices.getTableDataViaPykernApi({ proposal, page, pageSize })
   },
   {
-    condition: ({ page = 1, pageSize = 10 }, { getState }) => {
+    condition: ({ page, pageSize }, { getState }) => {
       const { tableData } = getState() as { tableData: TableDataState }
       const runs = tableData.metadata.runs
       if (runs.length === 0) return false

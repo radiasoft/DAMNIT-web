@@ -183,8 +183,8 @@ type PykernVariable = {
 
 async function getTableDataViaPykernApi({
   proposal,
-  page = 1,
-  pageSize = 10,
+  page,
+  pageSize,
 }: TableDataOptions): Promise<TableData> {
   return new Promise((resolve, reject) => {
     pykernApiService.call(

@@ -125,7 +125,7 @@ export const usePagination = ({
       if (USE_PYKERN_API && !hasMetadata) return
       dispatch(
         USE_PYKERN_API
-          ? getTableViaPykernApi({ proposal, pageSize: 10000 })
+          ? getTableViaPykernApi({ proposal, page: 1, pageSize: 10000 })
           : getTable({ proposal, pageSize: 10000 })
       )
       return
