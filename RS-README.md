@@ -27,7 +27,7 @@ binary in place so clean that up after the curl installer:
 curl -fsSL https://get.pnpm.io/install.sh | sh -
 emacs ~/.bashrc # remove the lines added
 mv ~/.local/share/pnpm/.tools/pnpm-exe/*.*.*/pnpm ~/.local/bin/
-rm -rf ~/.local/share/pnpm
+rm -r ~/.local/share/pnpm
 ```
 
 Install Vite and React:
@@ -45,7 +45,7 @@ To generate all test proposals:
 
 ```bash
 cd ~/src/radiasoft/DAMNIT-web/api
-rm -rf /tests/perf_data/cache
+rm -r tests/perf_data/cache
 # This step takes several minutes (12GB of data)
 VIRTUAL_ENV= uv run damnit-api dev setup-db tests/perf_data/cache
 ln -s api/tests/perf_data/cache ../run
