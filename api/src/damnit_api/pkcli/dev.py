@@ -49,15 +49,12 @@ _VARIABLES = {
     },
 }
 
-
 _SETUP_TEST = PKDict(
     large=PKDict(
         proposal=9001,
         runs=500,
         variables=PKDict(
-            large_image=lambda run: np.random.randint(
-                0, 256, size=(2048, 2048, 4), dtype=np.uint8
-            ),
+            large_image=lambda run: _sphere(run, 2048),
             numpy_3d_array=lambda run: np.random.rand(100, 100, 100),
             start_time="start_time",
         ),
@@ -73,21 +70,16 @@ _SETUP_TEST = PKDict(
         variables=PKDict(
             **_VARIABLES,
             **{
-                f"image_{i:02d}": (
-                    lambda run, _i=i: np.random.randint(
-                        0, 256, size=(256, 256, 4), dtype=np.uint8
-                    )
-                )
+                f"image_{i:02d}": lambda run, _i=i: _sphere(run, 256)
                 for i in range(10)
             },
         ),
     ),
 )
 
-
 def setup_db(path: str) -> None:
     """Generate large and small proposals under ``path`` for browser testing."""
-    x = [_Generator(path, s.proposal, s.runs, s.variables) for s in _SETUP_TEST.keys()]
+    x = [_Generator(path, s.proposal, s.runs, s.variables) for s in _SETUP_TEST.values()]
     t = time.time() - sum(g.num_runs for g in x) * _RUN_DELTA
     for g in x:
         t = g.generate(t)
@@ -221,3 +213,26 @@ class _Generator:
                         damnit.backend.db.ReducedData(_db_value(dset)),
                     )
         db.close()
+
+def _sphere(run, size=2048):
+    def _rgba(signal):
+        r = (signal * 255).astype(np.uint8)
+        return [
+            r,
+            (signal ** 2 * 180).astype(np.uint8),
+            (signal ** 3 * 80).astype(np.uint8),
+            np.full_like(r, 255),
+        ]
+    def _signal(rng, cx, cy, y, x):
+        rv = np.exp(-((x - cx) ** 2 + (y - cy) ** 2) / 0.1)
+        return (rv + rng.normal(0, 0.02, rv.shape)).clip(0, 1)
+
+    def _dims():
+        r = np.random.default_rng(run)
+        return (
+            r,
+            *r.uniform(-0.3, 0.3, size=2),
+            *np.mgrid[-1:1:complex(size), -1:1:complex(size)],
+        )
+
+    return np.stack(_rgba(_signal(*_dims())), axis=-1)
